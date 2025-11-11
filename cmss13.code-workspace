@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "cmss13"
+		}
+	],
+	"settings": {
+		"workbench.editorAssociations": {
+			"*.dmi": "dmiEditor.dmiEditor"
+		},
+		"dreammaker.tickOnCreate": true,
+		"dreammaker.reparseOnSave": true,
+		"dreammaker.autoUpdate": true
+	}
+}
