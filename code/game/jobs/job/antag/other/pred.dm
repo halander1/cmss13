@@ -74,11 +74,15 @@
 
 	handle_spawn_and_equip = TRUE
 
-/datum/job/antag/young_blood/leader
-	gear_preset = /datum/equipment_preset/yautja/non_wl_leader
-
 /datum/job/antag/young_blood/generate_entry_conditions(mob/living/hunter)
 	. = ..()
 
 	if(SSticker.mode)
 		SSticker.mode.initialize_predator(hunter, ignore_pred_num = TRUE)
+
+/datum/timelock/young_blood
+	name = "Young Blood Roles"
+
+/datum/timelock/young_blood/New(name, time_required, list/roles)
+	. = ..()
+	src.roles = JOB_YOUNGBLOOD_ROLES_LIST

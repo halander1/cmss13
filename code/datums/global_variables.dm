@@ -112,7 +112,7 @@
 
 	html += "</body></html>"
 
-	show_browser(usr, html, "View Global Variables", "global_variables", "size=475x650")
+	show_browser(usr, html, "View Global Variables", "global_variables", width = 475, height = 650)
 
 	return
 
@@ -399,7 +399,7 @@
 			global.vars[variable] = var_new
 
 		if("icon")
-			var/var_new = input("Pick icon:","Icon",global.vars[variable]) as null|icon
+			var/var_new = pick_and_customize_icon(pick_only=TRUE)
 			if(var_new==null)
 				return
 			global.vars[variable] = var_new

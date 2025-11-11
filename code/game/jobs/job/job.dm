@@ -1,7 +1,7 @@
 /datum/job
 	//The name of the job
-	var/title = ""  //The internal title for the job, used for the job ban system and so forth. Don't change these, change the disp_title instead.
-	var/disp_title  //Determined on new(). Usually the same as the title, but doesn't have to be. Set this to override what the player sees in the game as their title.
+	var/title = null //The internal title for the job, used for the job ban system and so forth. Don't change these, change the disp_title instead.
+	var/disp_title //Determined on new(). Usually the same as the title, but doesn't have to be. Set this to override what the player sees in the game as their title.
 	var/role_ban_alternative // If the roleban title needs to be an extra check, like Xenomorphs = Alien.
 
 	var/total_positions = 0 //How many players can be this job
@@ -41,6 +41,9 @@
 	var/gets_emergency_kit = TRUE
 	/// Under what faction menu the job gets displayed in lobby
 	var/faction_menu = FACTION_NEUTRAL //neutral to cover uscm jobs for now as loads of them are under civil and stuff mainly ment for other faction
+
+	/// How many points people with this role selected get to pick from
+	var/loadout_points = 0
 
 /datum/job/New()
 	. = ..()
@@ -115,11 +118,20 @@
 	else
 		return time_required - get_job_playtime(C, roles)
 
+/client/proc/can_skip_role_lock()
+	if(admin_holder && (admin_holder.rights & (R_NOLOCK | R_ADMIN)))
+		return TRUE
+	if(GLOB.community_awards[ckey])
+		for(var/award in GLOB.community_awards[ckey])
+			if(award == "SDTimeAward")
+				return TRUE
+	return FALSE
+
 /datum/job/proc/can_play_role(client/client)
 	if(!CONFIG_GET(flag/use_timelocks))
 		return TRUE
 
-	if(client.admin_holder && (client.admin_holder.rights & (R_NOLOCK | R_ADMIN)))
+	if(client.can_skip_role_lock())
 		return TRUE
 
 	if(get_job_playtime(client, title) > minimum_playtime_as_job)
@@ -130,6 +142,10 @@
 		if(!T.can_play(client))
 			return FALSE
 
+	return TRUE
+
+/// Whether the client passes requirements for the scenario
+/datum/job/proc/can_play_role_in_scenario(client/client)
 	return TRUE
 
 /datum/job/proc/get_role_requirements(client/C)
@@ -145,29 +161,29 @@
 /datum/job/proc/get_access()
 	if(!gear_preset)
 		return null
-	if(GLOB.gear_path_presets_list[gear_preset])
-		return GLOB.gear_path_presets_list[gear_preset].access
+	if(GLOB.equipment_presets.gear_path_presets_list[gear_preset])
+		return GLOB.equipment_presets.gear_path_presets_list[gear_preset].access
 	return null
 
 /datum/job/proc/get_skills()
 	if(!gear_preset)
 		return null
-	if(GLOB.gear_path_presets_list[gear_preset])
-		return GLOB.gear_path_presets_list[gear_preset].skills
+	if(GLOB.equipment_presets.gear_path_presets_list[gear_preset])
+		return GLOB.equipment_presets.gear_path_presets_list[gear_preset].skills
 	return null
 
 /datum/job/proc/get_paygrade()
 	if(!gear_preset)
 		return ""
-	if(GLOB.gear_path_presets_list[gear_preset])
-		return GLOB.gear_path_presets_list[gear_preset].paygrades[1]
+	if(GLOB.equipment_presets.gear_path_presets_list[gear_preset])
+		return GLOB.equipment_presets.gear_path_presets_list[gear_preset].paygrades[1]
 	return ""
 
 /datum/job/proc/get_comm_title()
 	if(!gear_preset)
 		return ""
-	if(GLOB.gear_path_presets_list[gear_preset])
-		return GLOB.gear_path_presets_list[gear_preset].role_comm_title
+	if(GLOB.equipment_presets.gear_path_presets_list[gear_preset])
+		return GLOB.equipment_presets.gear_path_presets_list[gear_preset].role_comm_title
 	return ""
 
 /datum/job/proc/set_spawn_positions(count)
@@ -261,6 +277,8 @@
 
 		human.job = title //TODO Why is this a mob variable at all?
 
+		load_loadout(M)
+
 		if(gear_preset_whitelist[job_whitelist])
 			arm_equipment(human, gear_preset_whitelist[job_whitelist], FALSE, TRUE)
 			var/generated_account = generate_money_account(human)
@@ -274,6 +292,7 @@
 
 		if(flags_startup_parameters & ROLE_ADD_TO_SQUAD) //Are we a muhreen? Randomize our squad. This should go AFTER IDs. //TODO Robust this later.
 			GLOB.RoleAuthority.randomize_squad(human)
+		GLOB.RoleAuthority.prioritize_specialist(human)
 
 		if(Check_WO() && GLOB.job_squad_roles.Find(GET_DEFAULT_ROLE(human.job))) //activates self setting proc for marine headsets for WO
 			var/datum/game_mode/whiskey_outpost/WO = SSticker.mode
@@ -309,6 +328,22 @@
 
 	return TRUE
 
+/// If we have one, equip our mob with their job gear
+/datum/job/proc/load_loadout(mob/living/carbon/human/new_human)
+	if(!new_human.client || !new_human.client.prefs)
+		return
+
+	var/equipment_slot = new_human.client.prefs.get_active_loadout(title)
+	if(!length(equipment_slot))
+		return
+
+	for(var/gear_type in equipment_slot)
+		var/datum/gear/current_gear = GLOB.gear_datums_by_type[gear_type]
+		if(!current_gear)
+			continue
+
+		current_gear.equip_to_user(new_human)
+
 /// Intended to be overwritten to handle when a job has variants that can be selected.
 /datum/job/proc/handle_job_options(option)
 	return
@@ -326,4 +361,8 @@
 
 /// Called when the job owner enters deep cryogenic storage
 /datum/job/proc/on_cryo(mob/living/carbon/human/cryoing)
+	return
+
+/// Returns the active player on this job, specifically for singleton jobs
+/datum/job/proc/get_active_player_on_job()
 	return

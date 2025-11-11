@@ -8,6 +8,7 @@
 	name = "facehugger"
 	desc = "It has some sort of a tube at the end of its tail."
 	icon = 'icons/mob/xenos/effects.dmi'
+	flags_obj = OBJ_IS_HELMET_GARB
 	item_icons = list(
 		WEAR_FACE = 'icons/mob/humans/onmob/clothing/masks/objects.dmi',
 		WEAR_AS_GARB = 'icons/mob/humans/onmob/clothing/helmet_garb/misc.dmi',
@@ -38,6 +39,8 @@
 	var/hivenumber = XENO_HIVE_NORMAL
 	var/flags_embryo = NO_FLAGS
 	var/impregnated = FALSE
+	/// How many units of stims are drained upon hugging
+	var/stim_drain = 30
 
 	/// The timer for the hugger to jump
 	/// at the nearest human
@@ -314,6 +317,8 @@
 	if(!sterile)
 		if(!human.species || !(human.species.flags & IS_SYNTHETIC)) //synthetics aren't paralyzed
 			human.apply_effect(MIN_IMPREGNATION_TIME * 0.5 * knockout_mod, PARALYZE) //THIS MIGHT NEED TWEAKS
+			for(var/datum/reagent/generated/stim in human.reagents.reagent_list) // Banish them stims
+				human.reagents.remove_reagent(stim.id, stim_drain, TRUE)
 
 	var/area/hug_area = get_area(src)
 	var/name = hugger ? "[hugger]" : "\a [src]"
@@ -474,7 +479,8 @@
 /proc/can_hug(mob/living/carbon/M, hivenumber)
 	if(!istype(M) || isxeno(M) || issynth(M) || iszombie(M) || isHellhound(M) || M.stat == DEAD || !M.huggable)
 		return FALSE
-
+	if(HAS_TRAIT(M, TRAIT_HAULED))
+		return FALSE
 	if(M.ally_of_hivenumber(hivenumber))
 		return FALSE
 

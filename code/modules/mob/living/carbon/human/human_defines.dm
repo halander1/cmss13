@@ -2,6 +2,7 @@
 	light_system = MOVABLE_LIGHT
 	rotate_on_lying = TRUE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
+	dirlock_slowdown = FALSE
 	//Hair color and style
 	var/r_hair = 0
 	var/g_hair = 0
@@ -39,10 +40,10 @@
 	var/lip_style = null //no lipstick by default- arguably misleading, as it could be used for general makeup
 
 	var/age = 30 //Player's age (pure fluff)
-	var/b_type = "A+" //Player's bloodtype
+	blood_type = "A+" //Player's bloodtype
 
 	var/underwear = "Boxers (Camo Conforming)" //Which underwear the player wants
-	var/undershirt = "Undershirt (Tan)" //Which undershirt the player wants.
+	var/undershirt = "Undershirt (Tan) (Camo Conforming)" //Which undershirt the player wants.
 	var/backbag = 2 //Which backpack type the player has chosen. Satchel or Backpack.
 
 	var/datum/species/species //Contains icon generation and language information, set during New().
@@ -115,6 +116,7 @@
 	var/shield_slowdown = 0 // Slowdown from readying shields
 
 	var/datum/equipment_preset/assigned_equipment_preset
+	var/rank_override
 	var/rank_fallback
 
 	var/datum/squad/assigned_squad //the squad this human is assigned to
@@ -175,6 +177,12 @@
 
 	// Are we currently using inherent zoom vision?
 	var/is_zoomed = FALSE
+
+	// Xenomorph that is hauling us if we are hauled
+	var/mob/living/carbon/xenomorph/hauling_xeno
+
+	// Haul resist cooldown
+	var/next_haul_resist
 
 /client/var/cached_human_playtime
 

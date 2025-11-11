@@ -49,7 +49,7 @@
 
 	base_actions = list(
 		/datum/action/xeno_action/onclick/xeno_resting,
-		/datum/action/xeno_action/onclick/regurgitate,
+		/datum/action/xeno_action/onclick/release_haul,
 		/datum/action/xeno_action/watch_xeno,
 		/datum/action/xeno_action/activable/tail_stab,
 		/datum/action/xeno_action/onclick/rend,
@@ -65,6 +65,9 @@
 
 	bubble_icon = "alienroyal"
 
+	skull = /obj/item/skull/king
+	pelt = /obj/item/pelt/king
+
 /mob/living/carbon/xenomorph/king/get_organ_icon()
 	return "heart_t3"
 
@@ -76,11 +79,30 @@
 /mob/living/carbon/xenomorph/king/Initialize()
 	. = ..()
 	AddComponent(/datum/component/footstep, 2 , 35, 11, 4, "alien_footstep_large")
-	RegisterSignal(src, COMSIG_MOVABLE_PRE_MOVE, PROC_REF(check_block))
+	RegisterSignal(src, COMSIG_MOVABLE_MOVED, PROC_REF(post_move))
+	hive = GLOB.hive_datum[hivenumber]
+	hive.banned_allies = list("All")
+	if(hive.break_all_alliances())
+		xeno_message(SPAN_XENOANNOUNCE("With the arrival of the King, all alliances have been broken."), 3, hivenumber)
 
-/mob/living/carbon/xenomorph/king/proc/check_block(mob/king, turf/new_loc)
+/mob/living/carbon/xenomorph/king/initialize_pass_flags(datum/pass_flags_container/pass_flags)
+	. = ..()
+	if(!pass_flags)
+		return
+
+	pass_flags.flags_pass |= PASS_MOB_THRU
+
+/mob/living/carbon/xenomorph/king/proc/post_move(mob/king)
 	SIGNAL_HANDLER
+
+	if(stat == DEAD)
+		return
+
+	var/turf/new_loc = get_turf(src)
+
 	for(var/mob/living/carbon/carbon in new_loc.contents)
+		if(carbon == src)
+			continue
 		if(isxeno(carbon))
 			var/mob/living/carbon/xenomorph/xeno = carbon
 			if(xeno.hivenumber == src.hivenumber && !(king.client?.prefs?.toggle_prefs & TOGGLE_AUTO_SHOVE_OFF))
@@ -94,6 +116,7 @@
 				carbon.apply_armoured_damage(20)
 				carbon.KnockDown((1 SECONDS) / GLOBAL_STATUS_MULTIPLIER)
 				playsound(src, 'sound/weapons/alien_knockdown.ogg', 25, 1)
+
 /mob/living/carbon/xenomorph/king/gib(datum/cause_data/cause = create_cause_data("gibbing", src))
 	death(cause, 1)
 
@@ -104,15 +127,10 @@
 	icon_xeno = 'icons/mob/xenos/castes/tier_4/rogueking.dmi'
 	icon = 'icons/mob/xenos/castes/tier_4/rogueking.dmi'
 
-/atom/movable/vis_obj/xeno_wounds/rogue
-	icon = 'icons/mob/xenos/castes/tier_4/roguedamage.dmi'
-
-/mob/living/carbon/xenomorph/king/rogue/Initialize(mapload, mob/living/carbon/xenomorph/old_xeno, hivenumber)
+/mob/living/carbon/xenomorph/king/death(cause, gibbed)
 	. = ..()
-	vis_contents -= wound_icon_holder
-	wound_icon_holder = new /atom/movable/vis_obj/xeno_wounds/rogue(null, src)
-	vis_contents += wound_icon_holder
-
+	if(hive)
+		hive.setup_banned_allies()
 
 /*
 	REND ABILITY
@@ -402,7 +420,7 @@
 			item.throw_atom(throwtarget, 2, SPEED_REALLY_FAST, owner, TRUE)
 
 	for(var/obj/structure/structure in orange(1, owner))
-		structure.ex_act(1000, get_dir(owner, structure))
+		INVOKE_ASYNC(structure, TYPE_PROC_REF(/atom, ex_act), 1000, get_dir(owner, structure))
 
 	for(var/mob/living in range(7, owner))
 		shake_camera(living, 15, 1)

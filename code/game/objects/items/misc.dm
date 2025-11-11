@@ -297,10 +297,9 @@
 	icon_state = "digital_clock"
 	force = 3
 	throwforce = 2
-	throw_speed = 1
 	throw_range = 4
 	w_class = SIZE_SMALL
 
 /obj/item/clock/get_examine_text(mob/user)
 	. = ..()
-	. += SPAN_NOTICE("The [src] reads: [GLOB.current_date_string] - [worldtime2text()]")
+	. += SPAN_NOTICE("The [name] reads: [GLOB.current_date_string] - [worldtime2text()]")

@@ -9,13 +9,13 @@
 		forceMove(get_turf(pick(GLOB.newplayer_start)))
 	else
 		forceMove(locate(1,1,1))
-	lastarea = get_area(src.loc)
-
-	initialize_lobby_screen()
+	lastarea = get_area(loc)
 
 	GLOB.new_player_list += src
 
-	. = ..()
+	..()
+
+	initialize_lobby_screen() // This has winsets that can sleep, so all variables must be set prior in the event Logout occurs during sleep
 
 	addtimer(CALLBACK(src, PROC_REF(lobby)), 4 SECONDS)
 
@@ -71,6 +71,8 @@
 	.["xenomorph_enabled"] = GLOB.master_mode == /datum/game_mode/colonialmarines::name && client.prefs && (client.prefs.get_job_priority(JOB_XENOMORPH) || client.prefs.get_job_priority(JOB_XENOMORPH_QUEEN))
 	.["predator_enabled"] = SSticker.mode?.flags_round_type & MODE_PREDATOR && SSticker.mode.check_predator_late_join(src, FALSE)
 	.["fax_responder_enabled"] = SSticker.mode?.check_fax_responder_late_join(src, FALSE)
+
+	.["preference_issues"] = client.prefs.errors
 
 /mob/new_player/ui_static_data(mob/user)
 	. = ..()
@@ -238,15 +240,30 @@
 			execute_on_confirm = null
 			return TRUE
 
+		if("poll")
+			SSpolls.tgui_interact(src)
+			return TRUE
+
 		if("keyboard")
 			playsound_client(client, get_sfx("keyboard"), vol = 20)
 
-/// Join as a 'xeno' - set us up in the larva queue
+/// Join as a 'xeno' - set us up in the larva pool
 /mob/new_player/proc/observe_for_xeno()
-	if(client.prefs && !(client.prefs.be_special & BE_ALIEN_AFTER_DEATH))
-		client.prefs.be_special |= BE_ALIEN_AFTER_DEATH
-		to_chat(src, SPAN_BOLDNOTICE("You will now be considered for Xenomorph after unrevivable death events (where possible)."))
+	if(!client)
+		return
+
+	if(client.prefs && !(client.prefs.be_special & BE_ALIEN))
+		client.prefs.be_special |= BE_ALIEN
+		to_chat(src, SPAN_BOLDNOTICE("SpecialRole Candidacy was forced so you can be considered for Xenomorph."))
+
+	var/client/current_client = client
+
 	attempt_observe()
+
+	// If a mod wants to join as a xeno, disable their larva protection so that they can enter the larva pool.
+	if(check_client_rights(current_client, R_MOD, FALSE) && current_client.mob)
+		var/mob/dead/observer/mod_observer = current_client.mob
+		mod_observer.admin_larva_protection = FALSE
 
 /mob/new_player/proc/lobby()
 	if(!client)

@@ -19,8 +19,6 @@
 	deevolves_to = list(XENO_CASTE_SENTINEL)
 	acid_level = 2
 
-	spit_delay = 2.5 SECONDS
-
 	tackle_min = 2
 	tackle_max = 6
 	tackle_chance = 45
@@ -44,14 +42,13 @@
 	tier = 2
 	base_actions = list(
 		/datum/action/xeno_action/onclick/xeno_resting,
-		/datum/action/xeno_action/onclick/regurgitate,
+		/datum/action/xeno_action/onclick/release_haul,
 		/datum/action/xeno_action/watch_xeno,
 		/datum/action/xeno_action/activable/tail_stab/spitter,
 		/datum/action/xeno_action/activable/corrosive_acid,
-		/datum/action/xeno_action/activable/xeno_spit,
+		/datum/action/xeno_action/activable/xeno_spit/spitter,
 		/datum/action/xeno_action/onclick/charge_spit,
 		/datum/action/xeno_action/activable/spray_acid/spitter,
-		/datum/action/xeno_action/onclick/tacmap,
 	)
 	inherent_verbs = list(
 		/mob/living/carbon/xenomorph/proc/vent_crawl,
@@ -60,10 +57,14 @@
 	icon_xeno = 'icons/mob/xenos/castes/tier_2/spitter.dmi'
 	icon_xenonid = 'icons/mob/xenonids/castes/tier_2/spitter.dmi'
 
+	acid_overlay = icon('icons/mob/xenos/castes/tier_2/spitter.dmi', "Spitter-Spit")
+
 	weed_food_icon = 'icons/mob/xenos/weeds_48x48.dmi'
 	weed_food_states = list("Drone_1","Drone_2","Drone_3")
 	weed_food_states_flipped = list("Drone_1","Drone_2","Drone_3")
 
+	skull = /obj/item/skull/spitter
+	pelt = /obj/item/pelt/spitter
 
 /datum/action/xeno_action/onclick/charge_spit/use_ability(atom/A)
 	var/mob/living/carbon/xenomorph/zenomorf = owner

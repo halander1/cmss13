@@ -35,7 +35,7 @@
 	adj_temp = 0
 
 
-//FRIUT JUICE//
+//FRUIT JUICE//
 
 /datum/reagent/drink/orangejuice
 	name = "Orange juice"
@@ -125,19 +125,19 @@
 	name = "Watermelon Juice"
 	id = "watermelonjuice"
 	description = "Delicious juice made from watermelon."
-	color = "#863333" // rgb: 134, 51, 51
+	color = "#a71d1d" // rgb: 167, 29, 29
 
 /datum/reagent/drink/lemonjuice
 	name = "Lemon Juice"
 	id = "lemonjuice"
 	description = "This juice is VERY sour."
-	color = "#863333" // rgb: 175, 175, 0
+	color = "#d1db42" // rgb: 209, 219, 66
 
 /datum/reagent/drink/banana
 	name = "Banana Juice"
 	id = "banana"
 	description = "The raw essence of a banana."
-	color = "#863333" // rgb: 175, 175, 0
+	color = "#e4c439" // rgb: 228, 196, 57
 
 /datum/reagent/drink/potato_juice
 	name = "Potato Juice"
@@ -177,6 +177,14 @@
 	description = "An opaque white liquid made from soybeans."
 	color = "#DFDFC7" // rgb: 223, 223, 199
 
+/datum/reagent/drink/milk/coconut
+	name = "Coconut Milk"
+	id = "coconutmilk"
+	description = "A very light, half opaque milk from coconuts, barely has any taste on its own."
+	color = "#DFDFC7" // rgb: 223, 223, 199
+	chemclass = CHEM_CLASS_NONE
+	flags = REAGENT_NO_GENERATION
+
 /datum/reagent/drink/milk/cream
 	name = "Cream"
 	id = "cream"
@@ -215,7 +223,7 @@
 /datum/reagent/drink/souto
 	name = "Souto Classic"
 	id = "souto_classic"
-	description = "A tangerine flavored soda that's canned in Havana"
+	description = "A tangerine flavored soda that's canned in Havana."
 	color = "#802b00"
 	adj_drowsy = -10
 	chemclass = CHEM_CLASS_RARE
@@ -223,37 +231,37 @@
 /datum/reagent/drink/souto/cherry
 	name = "Cherry Souto"
 	id = "souto_cherry"
-	description = "A cherry flavored soda that's canned in Havanna"
+	description = "A cherry flavored soda that's canned in Havana."
 	color = COLOR_MAROON
 
 /datum/reagent/drink/souto/lime
 	name = "Lime Souto"
 	id = "souto_lime"
-	description = "A lime flavored soda that's canned in Havanna"
+	description = "A lime flavored soda that's canned in Havana."
 	color = "#878F00"
 
 /datum/reagent/drink/souto/grape
 	name = "Grape Souto"
 	id = "souto_grape"
-	description = "A grape flavored soda that's canned in Havanna"
+	description = "A grape flavored soda that's canned in Havana."
 	color = "#421C52"
 
 /datum/reagent/drink/souto/blueraspberry
 	name = "Blue Raspberry Souto"
 	id = "souto_blueraspberry"
-	description = "A blue fruit flavored soda that's canned in Havana"
+	description = "A blue fruit flavored soda that's canned in Havana."
 	color = "#005B96"
 
 /datum/reagent/drink/souto/peach
 	name = "Peach Souto"
 	id = "souto_peach"
-	description = "A peach flavored soda with flecks of peach pit floating inside that's canned in Havana"
+	description = "A peach flavored soda with flecks of peach pit floating inside that's canned in Havana."
 	color = "#FFE5B4"
 
 /datum/reagent/drink/souto/cranberry
 	name = "Cranberry Souto"
 	id = "souto_cranberry"
-	description = "A cranberry flavored soda that's canned in Havana"
+	description = "A cranberry flavored soda that's canned in Havana."
 	color = "#950714"
 
 /datum/reagent/drink/souto/vanilla
@@ -458,7 +466,16 @@
 	color = "#104038" // rgb: 16, 64, 56
 	adj_temp = 0
 
-
+/datum/reagent/drink/tea_leaves
+	name = "Tea leaves"
+	id = "tea_leaves"
+	description = "Black tea leaves, freeze dried."
+	color = "#1a2b1c" // rgb: 16, 16, 0
+	adj_dizzy = -2
+	adj_drowsy = -1
+	adj_sleepy = -3
+	chemclass = CHEM_CLASS_NONE
+	flags = REAGENT_NO_GENERATION
 
 //OTHER//
 
@@ -475,7 +492,7 @@
 	color = "#d1001c" // rgb: 209, 0, 28
 	chemclass = CHEM_CLASS_RARE
 	custom_metabolism = RAPID_METABOLISM
-
+	flags = REAGENT_NO_GENERATION
 	overdose = REAGENTS_OVERDOSE
 	overdose_critical = REAGENTS_OVERDOSE_CRITICAL
 	properties = list(PROPERTY_HYPERTHERMIC = 8)
@@ -662,8 +679,9 @@
 	color = "#FF8CFF" // rgb: 255, 140, 255
 	overdose = REAGENTS_OVERDOSE
 	overdose_critical = REAGENTS_OVERDOSE_CRITICAL
-	properties = list(PROPERTY_NEOGENETIC = 0.5, PROPERTY_ANTICORROSIVE = 0.5, PROPERTY_ANTITOXIC = 0.5, PROPERTY_OXYGENATING = 0.5, PROPERTY_RELAXING = 1)
+	properties = list(PROPERTY_NEOGENETIC = 0.5, PROPERTY_ANTICORROSIVE = 0.5, PROPERTY_ANTITOXIC = 0.5, PROPERTY_OXYGENATING = 0.5, PROPERTY_ANTISPASMODIC = 1)
 	adj_dizzy = -3
+	chemclass = CHEM_CLASS_RARE
 
 /datum/reagent/drink/cold/kiraspecial
 	name = "Kira Special"
@@ -690,4 +708,11 @@
 	adj_temp = 1
 	target_temp = T90C
 
-
+/datum/reagent/drink/bugjuice
+	name = "Bug Juice"
+	id = "bugjuice"
+	description = "Soda drink made from all kinds of insects, very nutritious."
+	nutriment_factor = 2 * FOOD_METABOLISM
+	color = "#2ca314" // rgb: 48, 32, 0
+	chemclass = CHEM_CLASS_RARE
+	flags = REAGENT_NO_GENERATION

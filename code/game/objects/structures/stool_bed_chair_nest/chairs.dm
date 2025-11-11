@@ -79,6 +79,11 @@
 	if(stacked_size)
 		stack_collapse()
 
+/obj/structure/bed/chair/handle_tail_stab(mob/living/carbon/xenomorph/xeno)
+	. = ..()
+	if(stacked_size)
+		stack_collapse()
+
 /obj/structure/bed/chair/attackby(obj/item/I, mob/user)
 	if(HAS_TRAIT(I, TRAIT_TOOL_WRENCH) && stacked_size)
 		to_chat(user, SPAN_NOTICE("You'll need to unstack the chairs before you can take one apart."))
@@ -133,8 +138,9 @@
 	if(istype(AM, /mob/living) && stacked_size)
 		var/mob/living/M = AM
 		stack_collapse()
-		M.apply_effect(2, STUN)
-		M.apply_effect(2, WEAKEN)
+		if(ishumansynth_strict(M))
+			M.apply_effect(2, STUN)
+			M.apply_effect(2, WEAKEN)
 	else if(stacked_size > 8 && prob(50))
 		stack_collapse()
 
@@ -579,6 +585,10 @@
 	if(isturf(target))
 		var/turf/open/T = target
 		if(!(istype(T)) || !proximity || T.density)
+			return
+		var/area/area = get_area(target)
+		if(!area.allow_construction)
+			to_chat(user, SPAN_WARNING("[src] must be assembled on a proper surface!"))
 			return
 		if(!T.allow_construction)
 			to_chat(user, SPAN_WARNING("[src] must be assembled on a proper surface!"))

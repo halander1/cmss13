@@ -397,7 +397,7 @@ GLOBAL_LIST_EMPTY(orbital_cannon_cancellation)
 	message_admins(FONT_SIZE_XL("<A href='byond://?_src_=admin_holder;[HrefToken(forceGlobal = TRUE)];admincancelob=1;cancellation=[cancellation_token]'>CLICK TO CANCEL THIS OB</a>"))
 
 	var/relative_dir
-	for(var/mob/M in urange(30, target))
+	for(var/mob/M in long_range(30, target))
 		if(get_turf(M) == target)
 			relative_dir = 0
 		else
@@ -408,7 +408,7 @@ GLOBAL_LIST_EMPTY(orbital_cannon_cancellation)
 		)
 	sleep(OB_TRAVEL_TIMING/3)
 
-	for(var/mob/M in urange(25, target))
+	for(var/mob/M in long_range(25, target))
 		if(get_turf(M) == target)
 			relative_dir = 0
 		else
@@ -419,7 +419,7 @@ GLOBAL_LIST_EMPTY(orbital_cannon_cancellation)
 		)
 	sleep(OB_TRAVEL_TIMING/3)
 
-	for(var/mob/M in urange(15, target))
+	for(var/mob/M in long_range(15, target))
 		M.show_message( \
 			SPAN_HIGHDANGER("OH GOD THE SKY WILL EXPLODE!!!"), SHOW_MESSAGE_VISIBLE, \
 			SPAN_HIGHDANGER("YOU SHOULDN'T BE HERE!"), SHOW_MESSAGE_AUDIBLE \
@@ -437,7 +437,7 @@ GLOBAL_LIST_EMPTY(orbital_cannon_cancellation)
 
 	var/radius_size = 30
 
-	for(var/mob/living/user in urange(radius_size, epicenter))
+	for(var/mob/living/user in long_range(radius_size, epicenter))
 
 		var/distance = get_accurate_dist(get_turf(user), epicenter)
 		var/distance_percent = ((radius_size - distance) / radius_size)
@@ -730,7 +730,7 @@ GLOBAL_LIST_EMPTY(orbital_cannon_cancellation)
 /obj/structure/machinery/computer/orbital_cannon_console/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "OrbitalCannonConsole", "[src.name]")
+		ui = new(user, src, "OrbitalCannonConsole", "[capitalize(name)]")
 		ui.open()
 
 /obj/structure/machinery/computer/orbital_cannon_console/ui_state(mob/user)

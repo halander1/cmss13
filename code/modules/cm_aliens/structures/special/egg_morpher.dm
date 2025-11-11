@@ -30,9 +30,14 @@
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, get_egg_cooldown())
 	range_bounds = SQUARE(x, y, EGGMORPG_RANGE)
+	update_minimap_icon()
+
+/obj/effect/alien/resin/special/eggmorph/proc/update_minimap_icon()
+	SSminimaps.remove_marker(src)
+	SSminimaps.add_marker(src, get_minimap_flag_for_faction(linked_hive?.hivenumber), image('icons/UI_icons/map_blips.dmi', null, "morpher"))
 
 /obj/effect/alien/resin/special/eggmorph/Destroy()
-	if (stored_huggers && linked_hive)
+	if(stored_huggers && linked_hive)
 		//Hugger explosion, like a carrier
 		var/obj/item/clothing/mask/facehugger/F
 		var/chance = 60
@@ -43,6 +48,7 @@
 				step_away(F,src,1)
 
 	range_bounds = null
+	SSminimaps.remove_marker(src)
 	. = ..()
 
 /obj/effect/alien/resin/special/eggmorph/get_examine_text(mob/user)
@@ -110,7 +116,11 @@
 
 	if(!linked_hive || !COOLDOWN_FINISHED(src, spawn_cooldown) || stored_huggers == huggers_to_grow_max)
 		return
-	COOLDOWN_START(src, spawn_cooldown, get_egg_cooldown())
+
+	if(boosted_structure)
+		COOLDOWN_START(src, spawn_cooldown, 30 SECONDS)
+	else
+		COOLDOWN_START(src, spawn_cooldown, get_egg_cooldown())
 	if(stored_huggers < huggers_to_grow_max)
 		stored_huggers = min(huggers_to_grow_max, stored_huggers + 1)
 
@@ -122,6 +132,12 @@
 	if(isnull(targets) || !length(targets))
 		return
 
+	for(var/mob/living/carbon/xenomorph/xeno in targets)
+		targets -= xeno //Don't add xenomorphs to the list of possible players we hug.
+
+
+	if(!length(targets))
+		return
 	var/target = pick(targets)
 	if(isnull(target))
 		return

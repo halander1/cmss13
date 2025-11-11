@@ -43,7 +43,6 @@
 	var/stat_msg1
 	var/stat_msg2
 
-	var/datum/tacmap/drawing/tacmap
 	var/minimap_type = MINIMAP_FLAG_USCM
 
 	processing = TRUE
@@ -51,10 +50,8 @@
 /obj/structure/machinery/computer/communications/Initialize()
 	. = ..()
 	start_processing()
-	tacmap = new(src, minimap_type)
 
 /obj/structure/machinery/computer/communications/Destroy()
-	QDEL_NULL(tacmap)
 	return ..()
 
 /obj/structure/machinery/computer/communications/process()
@@ -67,9 +64,6 @@
 
 	usr.set_interaction(src)
 	switch(href_list["operation"])
-		if("mapview")
-			tacmap.tgui_interact(usr)
-
 		if("main")
 			state = STATE_DEFAULT
 
@@ -330,16 +324,7 @@
 			state = STATE_ALERT_LEVEL
 
 		if("selectlz")
-			if(!SSticker.mode.active_lz)
-				var/lz_choices = list("lz1", "lz2")
-				var/new_lz = tgui_input_list(usr, "Select primary LZ", "LZ Select", lz_choices)
-				if(!new_lz)
-					return
-				if(new_lz == "lz1")
-					SSticker.mode.select_lz(locate(/obj/structure/machinery/computer/shuttle/dropship/flight/lz1))
-				else
-					SSticker.mode.select_lz(locate(/obj/structure/machinery/computer/shuttle/dropship/flight/lz2))
-
+			SSticker.mode.pick_a_lz(usr)
 
 		else
 			return FALSE
@@ -502,7 +487,7 @@
 				return FALSE
 
 	dat += "<BR>[(state != STATE_DEFAULT) ? "<A href='byond://?src=\ref[src];operation=main'>Main Menu</A>|" : ""]<A href='byond://?src=\ref[user];mach_close=communications'>Close</A>"
-	show_browser(user, dat, "Communications Console", "communications", "size=400x500")
+	show_browser(user, dat, "Communications Console", "communications", width = 400, height = 500)
 	onclose(user, "communications")
 #undef STATE_DEFAULT
 #undef STATE_MESSAGELIST

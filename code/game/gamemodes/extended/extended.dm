@@ -4,8 +4,6 @@
 	required_players = 0
 	latejoin_larva_drop = 0
 	votable = FALSE
-	var/research_allocation_interval = 10 MINUTES
-	var/next_research_allocation = 0
 	taskbar_icon = 'icons/taskbar/gml_colonyrp.png'
 
 /datum/game_mode/extended/announce()
@@ -17,9 +15,13 @@
 /datum/game_mode/extended/post_setup()
 	initialize_post_marine_gear_list()
 	round_time_lobby = world.time
+	GLOB.chemical_data.reroll_chemicals() //kickstart the research chemical contract "system"
 	return ..()
 
 /datum/game_mode/extended/process()
+	if(GLOB.chemical_data.next_reroll < world.time)
+		GLOB.chemical_data.reroll_chemicals()
+
 	. = ..()
 	if(next_research_allocation < world.time)
 		GLOB.ordnance_research.update_credits(GLOB.ordnance_research.credits_to_allocate)

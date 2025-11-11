@@ -5,7 +5,6 @@
 #define QUEEN_ANNOUNCE "The words of the Queen reverberate in your head..."
 #define QUEEN_MOTHER_ANNOUNCE "Queen Mother Psychic Directive"
 #define XENO_GENERAL_ANNOUNCE "You sense something unusual..." //general xeno announcement that don't involve Queen, for nuke for example
-#define YAUTJA_ANNOUNCE "You receive a message from your ship AI..." //preds announcement
 #define HIGHER_FORCE_ANNOUNCE SPAN_ANNOUNCEMENT_HEADER_BLUE("Unknown Higher Force")
 
 //xenomorph hive announcement
@@ -36,20 +35,24 @@
 		for(var/mob/M in targets)
 			if(isobserver(M)) //observers see everything
 				continue
-			var/mob/living/carbon/human/H = M
-			if(!istype(H) || H.stat != CONSCIOUS || isyautja(H)) //base human checks
-				targets.Remove(H)
+			var/mob/living/carbon/human/receiver = M
+			if(!istype(receiver) || receiver.stat != CONSCIOUS || isyautja(receiver)) //base human checks
+				targets.Remove(receiver)
 				continue
-			if(is_mainship_level(H.z)) // People on ship see everything
+			if(is_mainship_level(receiver.z) && !(istype(GLOB.master_mode, /datum/game_mode/extended/faction_clash))) // People on ship see everything, unless it is faction clash
 				continue
 
 			// If they have iff AND a marine headset they will recieve announcements
-			var/obj/item/card/id/card = H.get_idcard()
-			if ((FACTION_MARINE in card?.faction_group) && (istype(H.wear_l_ear, /obj/item/device/radio/headset/almayer) || istype(H.wear_r_ear, /obj/item/device/radio/headset/almayer)))
+			var/obj/item/card/id/card = receiver.get_idcard()
+			if ((FACTION_MARINE in card?.faction_group) && (istype(receiver.wear_l_ear, /obj/item/device/radio/headset/almayer) || istype(receiver.wear_r_ear, /obj/item/device/radio/headset/almayer)))
 				continue
 
-			if((H.faction != faction_to_display && !add_PMCs) || (H.faction != faction_to_display && add_PMCs && !(H.faction in FACTION_LIST_WY)) && !(faction_to_display in H.faction_group)) //faction checks
-				targets.Remove(H)
+			/// If they're in a joint-USCM job they'll get announcements regardless.
+			if((receiver.job in USCM_SHARED_JOBS) && (istype(receiver.wear_l_ear, /obj/item/device/radio/headset) || istype(receiver.wear_r_ear, /obj/item/device/radio/headset)))
+				continue
+
+			if((receiver.faction != faction_to_display && !add_PMCs) || (receiver.faction != faction_to_display && add_PMCs && !(receiver.faction in FACTION_LIST_WY)) && !(faction_to_display in receiver.faction_group)) //faction checks
+				targets.Remove(receiver)
 
 		switch(logging)
 			if(ARES_LOG_MAIN)
@@ -78,18 +81,6 @@
 
 	if(!isnull(signature))
 		message += "<br><br><i> Signed by, <br> [signature]</i>"
-
-	announcement_helper(message, title, targets, sound_to_play)
-
-//yautja ship AI announcement
-/proc/yautja_announcement(message, title = YAUTJA_ANNOUNCE, sound_to_play = sound('sound/misc/notice1.ogg'))
-	var/list/targets = GLOB.human_mob_list + GLOB.dead_mob_list
-	for(var/mob/M in targets)
-		if(isobserver(M)) //observers see everything
-			continue
-		var/mob/living/carbon/human/H = M
-		if(!isyautja(H) || H.stat != CONSCIOUS)
-			targets.Remove(H)
 
 	announcement_helper(message, title, targets, sound_to_play)
 
@@ -129,10 +120,11 @@
 //to ensure that all humans on ship hear it regardless of comms and power
 /proc/shipwide_ai_announcement(message, title = MAIN_AI_SYSTEM, sound_to_play = sound('sound/misc/interference.ogg'), signature, ares_logging = ARES_LOG_MAIN, quiet = FALSE)
 	var/list/targets = GLOB.human_mob_list + GLOB.dead_mob_list
-	for(var/mob/target in targets)
+	for(var/mob/target as anything in targets)
 		if(isobserver(target))
 			continue
-		if(!ishuman(target) || isyautja(target) || !is_mainship_level(target.z))
+		var/turf/target_turf = get_turf(target)
+		if(!ishuman(target) || isyautja(target) || !is_mainship_level(target_turf?.z))
 			targets.Remove(target)
 
 	if(!isnull(signature))
@@ -156,7 +148,7 @@
 			continue
 
 		to_chat_spaced(target, html = "[SPAN_ANNOUNCEMENT_HEADER(title)]<br><br>[SPAN_ANNOUNCEMENT_BODY(message)]", type = MESSAGE_TYPE_RADIO)
-		if(!quiet)
+		if(!quiet && sound_to_play)
 			if(isobserver(target) && !(target.client?.prefs?.toggles_sound & SOUND_OBSERVER_ANNOUNCEMENTS))
 				continue
 			playsound_client(target.client, sound_to_play, target, vol = 45)

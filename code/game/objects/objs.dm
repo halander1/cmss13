@@ -35,6 +35,8 @@
 	/// set when a player uses a pen on a renamable object
 	var/renamedByPlayer = FALSE
 
+	vis_flags = VIS_INHERIT_PLANE
+
 
 /obj/Initialize(mapload, ...)
 	. = ..()
@@ -308,8 +310,16 @@
 			do_buckle(M, user)
 			return
 	if ((M.mob_size > MOB_SIZE_HUMAN))
-		to_chat(user, SPAN_WARNING("[M] is too big to buckle in."))
-		return
+		if(istype(src, /obj/structure/bed/roller))
+			var/obj/structure/bed/roller/roller = src
+			if(!roller.can_carry_big)
+				to_chat(user, SPAN_WARNING("[M] is too big to buckle in."))
+				return
+			if(M.stat != DEAD)
+				to_chat(user, SPAN_WARNING("[M] resists your attempt to buckle!"))
+				return
+		if(M.stat != DEAD)
+			return
 	do_buckle(M, user)
 
 // the actual buckling proc
@@ -403,11 +413,16 @@
 	else
 		overlay_img = overlay_image(mob_icon, mob_state, color, RESET_COLOR)
 
-	var/inhands = slot == (WEAR_L_HAND || WEAR_R_HAND)
+	var/inhands
+
+	if(slot == WEAR_L_HAND || slot == WEAR_R_HAND)
+		inhands = TRUE
+	else
+		inhands = FALSE
 
 	var/offset_x = worn_x_dimension
 	var/offset_y = worn_y_dimension
-	if(inhands == 1 || inhands == 0)
+	if(inhands)
 		offset_x = inhand_x_dimension
 		offset_y = inhand_y_dimension
 

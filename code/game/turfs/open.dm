@@ -157,17 +157,34 @@
 	mouse_opacity = FALSE
 	can_bloody = FALSE
 	supports_surgery = FALSE
+	is_weedable = NOT_WEEDABLE
 
 /turf/open/void/vehicle
 	density = TRUE
 	opacity = TRUE
 
-/turf/open/void/is_weedable()
-	return NOT_WEEDABLE
-
 /turf/open/river
 	can_bloody = FALSE
 	supports_surgery = FALSE
+
+//Slipery slope
+/turf/open/slippery
+	name = "sloped roof"
+	icon = 'icons/turf/floors/floors.dmi'
+	icon_state = "grass1"
+	is_weedable = NOT_WEEDABLE
+
+
+/turf/open/slippery/Entered(atom/movable/crosser)
+	. = ..()
+	if(isobserver(crosser) || crosser.anchored)
+		return
+
+	if(!(isitem(crosser) || isliving(crosser)))
+		return
+
+	INVOKE_ASYNC(crosser, TYPE_PROC_REF(/atom/movable, throw_atom), (get_step(src, dir)), 50, SPEED_FAST, null, TRUE)
+
 
 // Prison grass
 /turf/open/organic/grass
@@ -187,6 +204,7 @@
 	icon_state = "mars_sand_1"
 	is_groundmap_turf = TRUE
 	minimap_color = MINIMAP_MARS_DIRT
+	is_weedable = SEMI_WEEDABLE
 
 
 /turf/open/mars_cave
@@ -486,6 +504,7 @@
 	icon_state = "grass1"
 	baseturfs = /turf/open/gm/grass
 	scorchable = "grass1"
+	is_weedable = SEMI_WEEDABLE
 
 /turf/open/gm/grass/grass1
 	icon_state = "grass1"
@@ -546,6 +565,7 @@
 	icon_state = "grassdirt_edge"
 	baseturfs = /turf/open/gm/dirtgrassborder
 	scorchable = "grass1"
+	is_weedable = SEMI_WEEDABLE
 
 /turf/open/gm/dirtgrassborder/north
 	dir = NORTH
@@ -653,6 +673,7 @@
 	baseturfs = /turf/open/gm/river
 	supports_surgery = FALSE
 	minimap_color = MINIMAP_WATER
+	is_weedable = NOT_WEEDABLE
 
 /turf/open/gm/river/Initialize(mapload, ...)
 	. = ..()
@@ -672,21 +693,6 @@
 	else
 		name = default_name
 		overlays += image("icon"=src.icon,"icon_state"=icon_overlay,"layer"=ABOVE_MOB_LAYER,"dir" = dir)
-
-/turf/open/gm/river/ex_act(severity)
-	if(covered & severity >= EXPLOSION_THRESHOLD_LOW)
-		covered = 0
-		update_icon()
-		spawn(10)
-			for(var/atom/movable/AM in src)
-				src.Entered(AM)
-				for(var/atom/movable/AM1 in src)
-					if(AM == AM1)
-						continue
-					AM1.Crossed(AM)
-	if(!covered && supports_fishing && prob(5))
-		var/obj/item/caught_item = get_fishing_loot(src, get_area(src), 15, 35, 10, 2)
-		caught_item.sway_jitter(3, 6)
 
 /turf/open/gm/river/Entered(atom/movable/AM)
 	..()
@@ -714,9 +720,9 @@
 			river_slowdown -= 0.7
 			if(isboiler(C))
 				river_slowdown -= 1
+		river_slowdown = max(0, river_slowdown)
 
-		var/new_slowdown = C.next_move_slowdown + river_slowdown
-		C.next_move_slowdown = new_slowdown
+		C.next_move_slowdown += river_slowdown
 
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
@@ -779,6 +785,7 @@
 /turf/open/gm/river/shallow_ocean_shallow_ocean
 	name = "shallow ocean"
 	default_name = "shallow ocean"
+	allow_construction = FALSE
 
 /turf/open/gm/river/ocean
 	color = "#dae3e2"
@@ -787,6 +794,7 @@
 /turf/open/gm/river/ocean/deep_ocean
 	name = "deep ocean"
 	default_name = "deep ocean"
+	allow_construction = FALSE
 
 /turf/open/gm/river/ocean/Entered(atom/movable/AM)
 	. = ..()
@@ -810,13 +818,15 @@
 	if(world.time % 5)
 		if(ismob(AM))
 			var/mob/rivermob = AM
-			to_chat(rivermob, SPAN_WARNING("Moving through the incredibly deep ocean slows you down a lot!"))
+			if(!HAS_TRAIT(rivermob, TRAIT_HAULED))
+				to_chat(rivermob, SPAN_WARNING("Moving through the incredibly deep ocean slows you down a lot!"))
 
 /turf/open/gm/coast
 	name = "coastline"
 	icon_state = "beach"
 	baseturfs = /turf/open/gm/coast
 	supports_surgery = FALSE
+	is_weedable = NOT_WEEDABLE
 
 /turf/open/gm/coast/north
 
@@ -893,11 +903,7 @@
 	icon_state = "black"
 	density = TRUE
 	supports_surgery = FALSE
-
-/turf/open/gm/empty/is_weedable()
-	return NOT_WEEDABLE
-
-
+	is_weedable = NOT_WEEDABLE
 
 //Nostromo turfs
 
@@ -924,10 +930,8 @@
 	. = ..()
 	setDir(pick(NORTH,SOUTH,EAST,WEST,NORTHEAST,NORTHWEST,SOUTHEAST,SOUTHWEST))
 
-/turf/open/ice/noweed/is_weedable() //used for new prison ice block xenos
-	return NOT_WEEDABLE
-
-
+/turf/open/ice/noweed //used for new prison ice block xenos
+	is_weedable = NOT_WEEDABLE
 
 // Colony tiles
 /turf/open/asphalt
@@ -1040,6 +1044,7 @@
 	icon_state = "grass1"
 	var/icon_spawn_state = "grass1"
 	baseturfs = /turf/open/jungle
+	is_weedable = NOT_WEEDABLE
 
 /turf/open/jungle/Initialize(mapload, ...)
 	. = ..()
@@ -1215,6 +1220,13 @@
 
 /turf/open/shuttle/bright_red
 	icon_state = "floor4"
+
+/turf/open/shuttle/bright_red/glow
+	icon_state = "floor4"
+	light_on = TRUE
+	light_power = 2
+	light_range = 3
+	light_color = "#ff0000"
 
 /turf/open/shuttle/red
 	icon_state = "floor6"
@@ -1394,6 +1406,11 @@
 	icon_state = "plating"
 	allow_construction = FALSE
 	supports_surgery = TRUE
+
+/turf/open/shuttle/lifeboat/catwalk
+	icon = 'icons/turf/escapepods.dmi'
+	icon_state = "floor3"
+	dir = EAST
 
 /turf/open/shuttle/lifeboat/plating_striped
 	icon_state = "plating_striped"

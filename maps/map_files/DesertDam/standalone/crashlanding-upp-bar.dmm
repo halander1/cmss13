@@ -252,6 +252,10 @@
 	icon_state = "paper_words";
 	item_state = "paper_words"
 	},
+/obj/item/ammo_box/magazine/misc/mre/upp{
+	pixel_x = -10;
+	pixel_y = 24
+	},
 /turf/open/shuttle/dropship/can_surgery/medium_grey_single_wide_up_to_down,
 /area/desert_dam/building/bar/bar)
 "fk" = (
@@ -2241,7 +2245,7 @@
 	},
 /area/desert_dam/building/bar/bar)
 "SF" = (
-/obj/structure/reagent_dispensers/fueltank,
+/obj/structure/reagent_dispensers/tank/fuel,
 /turf/open/floor/interior/wood,
 /area/desert_dam/building/bar/backroom)
 "SG" = (
@@ -2514,7 +2518,7 @@
 /turf/open/asphalt,
 /area/desert_dam/exterior/valley/bar_valley_dam)
 "Xe" = (
-/obj/structure/reagent_dispensers/watertank,
+/obj/structure/reagent_dispensers/tank/water,
 /obj/item/reagent_container/food/drinks/flask/canteen{
 	desc = "You take a sip from your trusty UPP canteen...";
 	pixel_x = 3;
