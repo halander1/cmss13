@@ -12,6 +12,10 @@
 	if(attacking_xeno.fortify || HAS_TRAIT(attacking_xeno, TRAIT_ABILITY_BURROWED))
 		return XENO_NO_DELAY_ACTION
 
+	if(HAS_TRAIT(src, TRAIT_HAULED))
+		to_chat(attacking_xeno, SPAN_WARNING("[src] is being hauled, we cannot do anything to them."))
+		return
+
 	var/intent = attacking_xeno.a_intent
 
 	if(attacking_xeno.behavior_delegate)
@@ -40,7 +44,13 @@
 				attacking_xeno.start_pulling(src)
 
 		if(INTENT_HARM)
-			if(attacking_xeno.can_not_harm(src))
+			if(attacking_xeno.claw_restrained())
+				attacking_xeno.animation_attack_on(src)
+				attacking_xeno.visible_message(SPAN_NOTICE("[attacking_xeno] tries to strike [src]"),
+				SPAN_XENONOTICE("We try to strike [src] but fail due to our restraints!"))
+				return XENO_ATTACK_ACTION
+
+			if(attacking_xeno.can_not_harm(src, check_hive_flags=FALSE)) // We manually check hive_flags later
 				attacking_xeno.animation_attack_on(src)
 				attacking_xeno.visible_message(SPAN_NOTICE("[attacking_xeno] nibbles [src]"),
 				SPAN_XENONOTICE("We nibble [src]"))
@@ -54,11 +64,29 @@
 				return XENO_NO_DELAY_ACTION
 
 			if(attacking_xeno.caste && !attacking_xeno.caste.is_intelligent)
-				if(HAS_TRAIT(src, TRAIT_NESTED) && (status_flags & XENO_HOST))
+				var/embryo_allied = FALSE
+				if(status_flags & XENO_HOST)
 					for(var/obj/item/alien_embryo/embryo in src)
 						if(HIVE_ALLIED_TO_HIVE(attacking_xeno.hivenumber, embryo.hivenumber))
-							to_chat(attacking_xeno, SPAN_WARNING("We should not harm this host! It has a sister inside."))
-							return XENO_NO_DELAY_ACTION
+							embryo_allied = TRUE
+							break
+
+				if(embryo_allied)
+					if(HAS_TRAIT(src, TRAIT_NESTED))
+						attacking_xeno.animation_attack_on(src)
+						attacking_xeno.visible_message(SPAN_NOTICE("[attacking_xeno] nibbles [src]"),
+						SPAN_XENONOTICE("We nibble [src], as it has a sister inside we should not harm."))
+						return XENO_NO_DELAY_ACTION
+					if(!HAS_FLAG(attacking_xeno.hive.hive_flags, XENO_SLASH_INFECTED))
+						attacking_xeno.animation_attack_on(src)
+						attacking_xeno.visible_message(SPAN_NOTICE("[attacking_xeno] nibbles [src]"),
+						SPAN_XENONOTICE("We nibble [src], as queen forbade slashing of infected hosts!"))
+						return XENO_ATTACK_ACTION
+				if(!HAS_FLAG(attacking_xeno.hive.hive_flags, XENO_SLASH_NORMAL))
+					attacking_xeno.animation_attack_on(src)
+					attacking_xeno.visible_message(SPAN_NOTICE("[attacking_xeno] nibbles [src]"),
+					SPAN_XENONOTICE("We nibble [src], as queen forbade slashing!"))
+					return XENO_ATTACK_ACTION
 
 			if(check_shields(0, attacking_xeno.name)) // Blocking check
 				attacking_xeno.visible_message(SPAN_DANGER("[attacking_xeno]'s slash is blocked by [src]'s shield!"),
@@ -69,8 +97,6 @@
 			attacking_xeno.track_slashes(attacking_xeno.caste_type) //Adds to slash stat.
 			var/damage = rand(attacking_xeno.melee_damage_lower, attacking_xeno.melee_damage_upper) + dam_bonus
 			var/acid_damage = 0
-			if(attacking_xeno.burn_damage_lower)
-				acid_damage = rand(attacking_xeno.burn_damage_lower, attacking_xeno.burn_damage_upper)
 
 			//Frenzy auras stack in a way, then the raw value is multipled by two to get the additive modifier
 			if(attacking_xeno.frenzy_aura > 0)
@@ -197,10 +223,11 @@
 
 			var/knocked_down
 			if(attacking_xeno.attempt_tackle(src, tackle_mult, tackle_min_offset, tackle_max_offset))
-				playsound(loc, 'sound/weapons/alien_knockdown.ogg', 25, 1)
 				var/strength = rand(attacking_xeno.tacklestrength_min, attacking_xeno.tacklestrength_max)
-				Stun(strength)
-				KnockDown(strength) // Purely for knockdown visuals. All the heavy lifting is done by Stun
+				var/datum/status_effect/incapacitating/stun/stun = Stun(strength, resistable=TRUE)
+				var/stun_resisted = strength != stun.last_amount
+				playsound(loc, 'sound/weapons/alien_knockdown.ogg', 25, stun_resisted ? 1.5 : 0)
+				KnockDown(stun.last_amount) // Purely for knockdown visuals. All the heavy lifting is done by Stun
 				attacking_xeno.visible_message(SPAN_DANGER("[attacking_xeno] tackles down [src]!"),
 				SPAN_DANGER("We tackle down [src]!"), null, 5, CHAT_TYPE_XENO_COMBAT)
 				SEND_SIGNAL(src, COMSIG_MOB_TACKLED_DOWN, attacking_xeno)
@@ -295,7 +322,7 @@
 	return TRUE
 
 /mob/living/carbon/human/is_xeno_grabbable()
-	if(stat != DEAD || chestburst)
+	if(stat != DEAD)
 		return TRUE
 
 	if(status_flags & XENO_HOST)
@@ -304,8 +331,8 @@
 				return FALSE
 		if(world.time > timeofdeath + revive_grace_period)
 			return FALSE // they ain't gonna burst now
-	else
-		return FALSE // leave the dead alone
+		return TRUE
+	return FALSE // leave the dead alone
 
 //This proc is here to prevent Xenomorphs from picking up objects (default attack_hand behaviour)
 //Note that this is overridden by every proc concerning a child of obj unless inherited
@@ -351,7 +378,7 @@
 	if(is_wired)
 		M.visible_message(SPAN_DANGER("The barbed wire slices into [M]!"),
 		SPAN_DANGER("The barbed wire slices into us!"), null, 5, CHAT_TYPE_XENO_COMBAT)
-		M.apply_damage(10)
+		M.apply_damage(10, enviro=TRUE)
 	return XENO_ATTACK_ACTION
 
 /obj/structure/barricade/handle_tail_stab(mob/living/carbon/xenomorph/xeno)
@@ -364,7 +391,7 @@
 		xeno.visible_message(SPAN_DANGER("[xeno] strikes \the [src] with its tail!"), SPAN_DANGER("We strike \the [src] with our tail!"), null, 5, CHAT_TYPE_XENO_COMBAT)
 	if(is_wired)
 		xeno.visible_message(SPAN_DANGER("The barbed wire slices into \the [xeno]'s tail!"), SPAN_DANGER("The barbed wire slices into our tail!"), null, 5, CHAT_TYPE_XENO_COMBAT)
-		xeno.apply_damage(5)
+		xeno.apply_damage(5, enviro=TRUE)
 	return TAILSTAB_COOLDOWN_NORMAL
 
 /obj/structure/surface/rack/attack_alien(mob/living/carbon/xenomorph/M)
@@ -594,13 +621,19 @@
 	if(M.is_mob_incapacitated() || M.body_position != STANDING_UP)
 		return XENO_NO_DELAY_ACTION
 
-	var/delay
+	var/delay = 4 SECONDS
 
 	if(!arePowerSystemsOn())
 		delay = 1 SECONDS
 		playsound(loc, "alien_doorpry", 25, TRUE)
 	else
-		delay = 4 SECONDS
+		switch(M.mob_size)
+			if(MOB_SIZE_XENO_SMALL, MOB_SIZE_XENO_VERY_SMALL)
+				delay = 4 SECONDS
+			if(MOB_SIZE_BIG)
+				delay = 1 SECONDS
+			if(MOB_SIZE_XENO)
+				delay = 3 SECONDS
 		playsound(loc, "alien_doorpry", 25, TRUE)
 
 	M.visible_message(SPAN_WARNING("[M] digs into [src] and begins to pry it open."),
@@ -937,30 +970,13 @@
 			if(welded)
 				difficulty = 30 // if its welded shut it should be harder to smash open
 			if(prob(difficulty))
-				break_open()
+				break_open(M)
 				M.visible_message(SPAN_DANGER("[M] smashes \the [src] open!"),
 				SPAN_DANGER("We smash \the [src] open!"), null, 5, CHAT_TYPE_XENO_COMBAT)
 		else
 			M.visible_message(SPAN_DANGER("[M] smashes [src]!"),
 			SPAN_DANGER("We smash [src]!"), null, 5, CHAT_TYPE_XENO_COMBAT)
 		return XENO_ATTACK_ACTION
-
-/obj/structure/girder/attack_alien(mob/living/carbon/xenomorph/M)
-	if((M.caste && M.caste.tier < 2 && M.claw_type < CLAW_TYPE_VERY_SHARP) || unacidable)
-		to_chat(M, SPAN_WARNING("Our claws aren't sharp enough to damage [src]."))
-		return XENO_NO_DELAY_ACTION
-	M.animation_attack_on(src)
-	health -= floor(rand(M.melee_damage_lower, M.melee_damage_upper) * 0.5)
-	if(health <= 0)
-		M.visible_message(SPAN_DANGER("[M] smashes [src] apart!"),
-		SPAN_DANGER("We slice [src] apart!"), null, 5, CHAT_TYPE_XENO_COMBAT)
-		playsound(loc, 'sound/effects/metalhit.ogg', 25, TRUE)
-		dismantle()
-	else
-		M.visible_message(SPAN_DANGER("[M] smashes [src]!"),
-		SPAN_DANGER("We [M.slash_verb] [src]!"), null, 5, CHAT_TYPE_XENO_COMBAT)
-		playsound(loc, 'sound/effects/metalhit.ogg', 25, TRUE)
-	return XENO_ATTACK_ACTION
 
 /obj/structure/machinery/vending/attack_alien(mob/living/carbon/xenomorph/M)
 	if(is_tipped_over)
@@ -974,6 +990,7 @@
 			M.visible_message(SPAN_DANGER("[M] smashes [src] beyond recognition!"),
 			SPAN_DANGER("We enter a frenzy and smash [src] apart!"), null, 5, CHAT_TYPE_XENO_COMBAT)
 			malfunction()
+			tip_over()
 		else
 			M.visible_message(SPAN_DANGER("[M] [M.slashes_verb] [src]!"),
 			SPAN_DANGER("We [M.slash_verb] [src]!"), null, 5, CHAT_TYPE_XENO_COMBAT)

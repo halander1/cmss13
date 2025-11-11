@@ -43,14 +43,13 @@
 
 	base_actions = list(
 		/datum/action/xeno_action/onclick/xeno_resting,
-		/datum/action/xeno_action/onclick/regurgitate,
+		/datum/action/xeno_action/onclick/release_haul,
 		/datum/action/xeno_action/watch_xeno,
 		/datum/action/xeno_action/activable/tail_stab/slam,
 		/datum/action/xeno_action/onclick/toggle_crest,
 		/datum/action/xeno_action/activable/headbutt,
 		/datum/action/xeno_action/onclick/tail_sweep,
 		/datum/action/xeno_action/activable/fortify,
-		/datum/action/xeno_action/onclick/tacmap,
 	)
 
 	icon_xeno = 'icons/mob/xenos/castes/tier_1/defender.dmi'
@@ -59,6 +58,9 @@
 	weed_food_icon = 'icons/mob/xenos/weeds_64x64.dmi'
 	weed_food_states = list("Defender_1","Defender_2","Defender_3")
 	weed_food_states_flipped = list("Defender_1","Defender_2","Defender_3")
+
+	skull = /obj/item/skull/defender
+	pelt = /obj/item/pelt/defender
 
 /mob/living/carbon/xenomorph/defender/handle_special_state()
 	if(fortify)
@@ -127,7 +129,7 @@
 		xeno.ability_speed_modifier -= speed_debuff
 		xeno.armor_deflection_buff -= armor_buff
 		xeno.mob_size = MOB_SIZE_XENO //no longer knockback immune
-		button.icon_state = "template"
+		button.icon_state = "template_xeno"
 		xeno.update_icons()
 
 	apply_cooldown()
@@ -168,7 +170,7 @@
 
 	if(!fendy.crest_defense)
 		apply_cooldown()
-		fendy.throw_atom(get_step_towards(carbone, fendy), 3, SPEED_SLOW, fendy)
+		fendy.throw_atom(get_step_towards(carbone, fendy), 3, SPEED_SLOW, fendy, tracking=TRUE)
 	if(!fendy.Adjacent(carbone))
 		on_cooldown_end()
 		return
@@ -275,7 +277,7 @@
 		UnregisterSignal(owner, COMSIG_MOB_DEATH)
 		fortify_switch(xeno, FALSE)
 		if(xeno.selected_ability != src)
-			button.icon_state = "template"
+			button.icon_state = "template_xeno"
 
 	apply_cooldown()
 	return ..()

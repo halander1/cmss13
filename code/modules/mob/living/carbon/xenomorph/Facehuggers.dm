@@ -8,6 +8,7 @@
 	name = "facehugger"
 	desc = "It has some sort of a tube at the end of its tail."
 	icon = 'icons/mob/xenos/effects.dmi'
+	flags_obj = OBJ_IS_HELMET_GARB
 	item_icons = list(
 		WEAR_FACE = 'icons/mob/humans/onmob/clothing/masks/objects.dmi',
 		WEAR_AS_GARB = 'icons/mob/humans/onmob/clothing/helmet_garb/misc.dmi',
@@ -474,7 +475,8 @@
 /proc/can_hug(mob/living/carbon/M, hivenumber)
 	if(!istype(M) || isxeno(M) || issynth(M) || iszombie(M) || isHellhound(M) || M.stat == DEAD || !M.huggable)
 		return FALSE
-
+	if(HAS_TRAIT(M, TRAIT_HAULED))
+		return FALSE
 	if(M.ally_of_hivenumber(hivenumber))
 		return FALSE
 

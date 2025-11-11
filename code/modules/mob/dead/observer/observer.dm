@@ -61,8 +61,8 @@
 	var/own_orbit_size = 0
 	var/observer_actions = list(/datum/action/observer_action/join_xeno, /datum/action/observer_action/join_lesser_drone)
 	var/datum/action/minimap/observer/minimap
-	///The last message for this player with their larva queue information
-	var/larva_queue_cached_message
+	///The last message for this player with their larva pool information
+	var/larva_pool_cached_message
 	///Used to bypass time of death checks such as when being selected for larva
 	var/bypass_time_of_death_checks = FALSE
 	///Used to bypass time of death checks for a successful hug
@@ -205,6 +205,11 @@
 		/atom/movable/screen/escape_menu,
 		/atom/movable/screen/buildmode,
 		/obj/effect/detector_blip,
+		/atom/movable/screen/minimap_tool,
+		/atom/movable/screen/exit_map,
+		/atom/movable/screen/minimap,
+		/atom/movable/screen/exit_map,
+		/atom/movable/screen/minimap_locator,
 	))
 
 	if(!client)
@@ -374,9 +379,7 @@
 	if(href_list["join_xeno"])
 		join_as_alien()
 	if(href_list[NOTIFY_USCM_TACMAP])
-		GLOB.uscm_tacmap_status.tgui_interact(src)
-	if(href_list[NOTIFY_XENO_TACMAP])
-		GLOB.xeno_tacmap_status.tgui_interact(src)
+		view_tacmaps()
 
 /mob/dead/observer/proc/set_huds_from_prefs()
 	if(!client || !client.prefs)
@@ -391,28 +394,34 @@
 					the_hud = GLOB.huds[MOB_HUD_MEDICAL_OBSERVER]
 					the_hud.add_hud_to(src, src)
 				if("Security HUD")
-					the_hud= GLOB.huds[MOB_HUD_SECURITY_ADVANCED]
+					the_hud = GLOB.huds[MOB_HUD_SECURITY_ADVANCED]
 					the_hud.add_hud_to(src, src)
 				if("Squad HUD")
-					the_hud= GLOB.huds[MOB_HUD_FACTION_OBSERVER]
+					the_hud = GLOB.huds[MOB_HUD_FACTION_OBSERVER]
 					the_hud.add_hud_to(src, src)
 				if("Xeno Status HUD")
-					the_hud= GLOB.huds[MOB_HUD_XENO_STATUS]
+					the_hud = GLOB.huds[MOB_HUD_XENO_STATUS]
 					the_hud.add_hud_to(src, src)
 				if("Faction UPP HUD")
-					the_hud= GLOB.huds[MOB_HUD_FACTION_UPP]
+					the_hud = GLOB.huds[MOB_HUD_FACTION_UPP]
 					the_hud.add_hud_to(src, src)
 				if("Faction Wey-Yu HUD")
-					the_hud= GLOB.huds[MOB_HUD_FACTION_WY]
+					the_hud = GLOB.huds[MOB_HUD_FACTION_WY]
 					the_hud.add_hud_to(src, src)
 				if("Faction TWE HUD")
-					the_hud= GLOB.huds[MOB_HUD_FACTION_TWE]
+					the_hud = GLOB.huds[MOB_HUD_FACTION_TWE]
 					the_hud.add_hud_to(src, src)
 				if("Faction CLF HUD")
-					the_hud= GLOB.huds[MOB_HUD_FACTION_CLF]
+					the_hud = GLOB.huds[MOB_HUD_FACTION_CLF]
+					the_hud.add_hud_to(src, src)
+				if("Faction WO HUD")
+					the_hud= GLOB.huds[MOB_HUD_FACTION_WO]
 					the_hud.add_hud_to(src, src)
 				if(HUD_MENTOR_SIGHT)
-					the_hud= GLOB.huds[MOB_HUD_NEW_PLAYER]
+					the_hud = GLOB.huds[MOB_HUD_NEW_PLAYER]
+					the_hud.add_hud_to(src, src)
+				if("Faction Hyperdyne HUD")
+					the_hud= GLOB.huds[MOB_HUD_FACTION_HC]
 					the_hud.add_hud_to(src, src)
 
 	see_invisible = INVISIBILITY_OBSERVER
@@ -484,7 +493,7 @@ Works together with spawning an observer, noted above.
 
 	mind = null
 
-	// Larva queue: We use the larger of their existing queue time or the new timeofdeath except for facehuggers or lesser drone
+	// Larva pool: We use the larger of their existing time or the new timeofdeath except for facehuggers or lesser drone
 	var/exempt_tod = isfacehugger(src) || islesserdrone(src) || should_block_game_interaction(src, include_hunting_grounds=TRUE)
 	var/new_tod = exempt_tod ? 1 : ghost.timeofdeath
 
@@ -506,11 +515,11 @@ Works together with spawning an observer, noted above.
 			ghost.client.player_data.load_timestat_data()
 
 	if(ghost.client?.player_details)
-		ghost.client.player_details.larva_queue_time = max(ghost.client.player_details.larva_queue_time, new_tod)
+		ghost.client.player_details.larva_pool_time = max(ghost.client.player_details.larva_pool_time, new_tod)
 	else if(persistent_ckey)
 		var/datum/player_details/details = GLOB.player_details[persistent_ckey]
 		if(details)
-			details.larva_queue_time = max(details.larva_queue_time, new_tod)
+			details.larva_pool_time = max(details.larva_pool_time, new_tod)
 
 	ghost.set_huds_from_prefs()
 
@@ -557,18 +566,18 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		if(ghost && !should_block_game_interaction(src, include_hunting_grounds=TRUE))
 			ghost.timeofdeath = world.time
 
-			// Larva queue: We use the larger of their existing queue time or the new timeofdeath except for facehuggers or lesser drone
+			// Larva pool: We use the larger of their existing time or the new timeofdeath except for facehuggers or lesser drone
 			var/new_tod = (isfacehugger(src) || islesserdrone(src)) ? 1 : ghost.timeofdeath
 
 			// if they died as facehugger or lesser drone, bypass typical TOD checks
 			ghost.bypass_time_of_death_checks = (isfacehugger(src) || islesserdrone(src))
 
 			if(ghost.client)
-				ghost.client.player_details.larva_queue_time = max(ghost.client.player_details.larva_queue_time, new_tod)
+				ghost.client.player_details.larva_pool_time = max(ghost.client.player_details.larva_pool_time, new_tod)
 			else if(persistent_ckey)
 				var/datum/player_details/details = GLOB.player_details[persistent_ckey]
 				if(details)
-					details.larva_queue_time = max(details.larva_queue_time, new_tod)
+					details.larva_pool_time = max(details.larva_pool_time, new_tod)
 
 		if(is_nested && nest && !QDELETED(nest))
 			ghost.can_reenter_corpse = FALSE
@@ -657,6 +666,25 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	forceMove(tree.entrance)
 
+/mob/dead/observer/verb/teleport_z_up()
+	set category = "Ghost.Movement"
+	set name = "Move Up"
+	set desc = "Move up a z level"
+
+	var/turf/above = SSmapping.get_turf_above(get_turf(src))
+
+	if(above)
+		usr.forceMove(above)
+
+/mob/dead/observer/verb/teleport_z_down()
+	set category = "Ghost.Movement"
+	set name = "Move Down"
+	set desc = "Move down a z level"
+
+	var/turf/below = SSmapping.get_turf_below(get_turf(src))
+
+	if(below)
+		usr.forceMove(below)
 
 /mob/dead/observer/verb/dead_teleport_area()
 	set category = "Ghost"
@@ -834,7 +862,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	to_chat(src, "<span style='color: blue;'>Gas type: [env_gas]</span>")
 	to_chat(src, "<span style='color: blue;'>Temperature: [round(env_temperature-T0C,0.1)]&deg;C</span>")
 
-
 /mob/dead/observer/verb/toggle_zoom()
 	set name = "Toggle Zoom"
 	set category = "Ghost.Settings"
@@ -890,6 +917,11 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	set category = "Ghost.View"
 	GLOB.crew_manifest.open_ui(src)
 
+/mob/dead/observer/verb/view_tacmaps()
+	set name = "View Tacmaps"
+	set category = "Ghost.View"
+	GLOB.tacmap_viewer.tgui_interact(src)
+
 /mob/dead/verb/hive_status()
 	set name = "Hive Status"
 	set desc = "Check the status of the hive."
@@ -918,23 +950,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 		GLOB.hive_datum[hives[faction]].hive_ui.open_hive_status(src)
 
-/mob/dead/observer/verb/view_uscm_tacmap()
-	set name = "View USCM Tacmap"
-	set category = "Ghost.View"
-
-	GLOB.uscm_tacmap_status.tgui_interact(src)
-
-/mob/dead/observer/verb/view_xeno_tacmap()
-	set name = "View Xeno Tacmap"
-	set category = "Ghost.View"
-
-	var/datum/hive_status/hive = GLOB.hive_datum[XENO_HIVE_NORMAL]
-	if(!hive || !length(hive.totalXenos))
-		to_chat(src, SPAN_ALERT("There seems to be no living normal hive at the moment"))
-		return
-
-	GLOB.xeno_tacmap_status.tgui_interact(src)
-
 /mob/dead/observer/verb/view_faxes()
 	set name = "View Sent Faxes"
 	set desc = "View faxes from this round"
@@ -955,7 +970,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to Weyland-Yutani", "wyfaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to Weyland-Yutani", "wyfaxviewer", width = 300, height = 600)
 
 		if("High Command")
 			var/body = "<body>"
@@ -965,7 +980,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to High Command", "uscmfaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to High Command", "uscmfaxviewer", width = 300, height = 600)
 
 		if("Provost")
 			var/body = "<body>"
@@ -975,7 +990,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to the Provost Office", "provostfaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to the Provost Office", "provostfaxviewer", width = 300, height = 600)
 
 		if("Press")
 			var/body = "<body>"
@@ -985,7 +1000,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to Press organizations", "pressfaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to Press organizations", "pressfaxviewer", width = 300, height = 600)
 
 		if("Colonial Marshal Bureau")
 			var/body = "<body>"
@@ -995,7 +1010,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to the Colonial Marshal Bureau", "cmbfaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to the Colonial Marshal Bureau", "cmbfaxviewer", width = 300, height = 600)
 
 		if("Union of Progressive Peoples")
 			var/body = "<body>"
@@ -1005,7 +1020,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to the Union of Progressive Peoples", "uppfaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to the Union of Progressive Peoples", "uppfaxviewer", width = 300, height = 600)
 
 		if("Three World Empire")
 			var/body = "<body>"
@@ -1015,7 +1030,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to the Three World Empire", "twefaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to the Three World Empire", "twefaxviewer", width = 300, height = 600)
 
 		if("Colonial Liberation Front")
 			var/body = "<body>"
@@ -1025,7 +1040,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Faxes to the Colonial Liberation Front", "clffaxviewer", "size=300x600")
+			show_browser(src, body, "Faxes to the Colonial Liberation Front", "clffaxviewer", width = 300, height = 600)
 
 		if("Other")
 			var/body = "<body>"
@@ -1035,7 +1050,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 				body += "<br><br>"
 
 			body += "<br><br></body>"
-			show_browser(src, body, "Inter-machine Faxes", "otherfaxviewer", "size=300x600")
+			show_browser(src, body, "Inter-machine Faxes", "otherfaxviewer", width = 300, height = 600)
 		if("Cancel")
 			return
 
@@ -1369,9 +1384,12 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		if(SShijack.sd_unlocked)
 			. += "Self Destruct Goal: [SShijack.get_sd_eta()]"
 
-	if(client.prefs?.be_special & BE_ALIEN_AFTER_DEATH)
-		if(larva_queue_cached_message)
-			. += larva_queue_cached_message
+	if(client.prefs?.be_special & BE_ALIEN)
+		if(!larva_pool_cached_message)
+			// Try to refresh now
+			message_alien_candidate_observer(src, cache_only=TRUE)
+		if(larva_pool_cached_message)
+			. += larva_pool_cached_message
 			. += ""
 
 	if(timeofdeath)

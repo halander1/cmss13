@@ -31,9 +31,14 @@
 #define LIFEBOAT_INACTIVE 0
 #define LIFEBOAT_ACTIVE 1
 
-#define XENO_ROUNDSTART_PROGRESS_AMOUNT 2
-#define XENO_ROUNDSTART_PROGRESS_TIME_1 0
-#define XENO_ROUNDSTART_PROGRESS_TIME_2 15 MINUTES
+/// How much evolution accumulates per xevolution tick during XENO_ROUNDSTART_BOOSTED_EVO_TIME
+#define XENO_ROUNDSTART_BOOSTED_EVO_AMOUNT 2
+/// How long xenos from ROUND_TIME have for evolution to accumulate without a queen on ovi
+#define XENO_ROUNDSTART_FREE_EVO_TIME 3 MINUTES
+/// How long xenos from ROUND_TIME have for evolution to accumulate without decay at XENO_ROUNDSTART_BOOSTED_EVO_AMOUNT
+#define XENO_ROUNDSTART_BOOSTED_EVO_TIME 15 MINUTES
+/// How long xenos from ROUND_TIME have latejoin_larva_drop_early used instead of latejoin_larva_drop (also allows burrowed without hivecore)
+#define XENO_ROUNDSTART_LATEJOIN_LARVA_TIME 15 MINUTES
 
 #define ROUND_TIME (world.time - SSticker.round_start_time)
 
@@ -69,34 +74,12 @@
 #define LATEJOIN_MARINES_PER_LATEJOIN_LARVA_EARLY 4
 #define LATEJOIN_MARINES_PER_LATEJOIN_LARVA 2.5
 
-//=================================================
-#define SHOW_ITEM_ANIMATIONS_NONE 0 //Do not show any item pickup animations
-#define SHOW_ITEM_ANIMATIONS_HALF 1 //Toggles tg-style item animations on and off, default on.
-#define SHOW_ITEM_ANIMATIONS_ALL 2 //Toggles being able to see animations that occur on the same tile.
-//=================================================
-
-//=================================================
-#define PAIN_OVERLAY_BLURRY 0 //Blurs your screen a varying amount depending on eye_blur.
-#define PAIN_OVERLAY_IMPAIR 1 //Impairs your screen like a welding helmet does depending on eye_blur.
-#define PAIN_OVERLAY_LEGACY 2 //Creates a legacy blurring effect over your screen if you have any eye_blur at all. Not recommended.
-//=================================================
-
-//=================================================
-#define FLASH_OVERLAY_WHITE 0 //Flashes your screen white.
-#define FLASH_OVERLAY_DARK 1 //Flashes your screen a dark grey.
-//=================================================
-
 #define NV_COLOR_GREEN "#39FF14"
 #define NV_COLOR_WHITE "#D3D3D3"
 #define NV_COLOR_ORANGE "#FFCC66"
 #define NV_COLOR_YELLOW "#FFFF66" //crazy ? i was crazy once
 #define NV_COLOR_RED "#FF3333"
 #define NV_COLOR_BLUE "#66CCFF"
-
-//=================================================
-#define CRIT_OVERLAY_WHITE 0 //Overlays your screen white.
-#define CRIT_OVERLAY_DARK 1 //Overlays your screen a dark grey.
-//=================================================
 
 /// Number of weighted marine players for 1 gear_scale. gear_scale is clamped to 1 minimum
 #define MARINE_GEAR_SCALING_NORMAL 50
@@ -211,6 +194,7 @@ GLOBAL_LIST_INIT(whitelist_hierarchy, list(WHITELIST_NORMAL, WHITELIST_COUNCIL, 
 #define SENATOR_LIST list(WHITELIST_COMMANDER_LEADER, WHITELIST_SYNTHETIC_LEADER, WHITELIST_YAUTJA_LEADER)
 #define isCouncil(A) (A.check_whitelist_status_list(COUNCIL_LIST))
 #define isSenator(A) (A.check_whitelist_status_list(SENATOR_LIST))
+#define isYautjaCouncil(A) (A.check_whitelist_status(WHITELIST_YAUTJA_COUNCIL))
 
 DEFINE_BITFIELD(whitelist_status, list(
 	"WHITELIST_YAUTJA" = WHITELIST_YAUTJA,
@@ -270,6 +254,9 @@ DEFINE_BITFIELD(whitelist_status, list(
 #define FACTION_CONTRACTOR "VAI"
 #define FACTION_MARSHAL "Colonial Marshal"
 #define FACTION_NSPA "NSPA"
+#define FACTION_IASF "Imperial Armed Space Force"
+#define FACTION_PAP "People's Armed Police"
+#define FACTION_HYPERDYNE "Hyperdyne Corporation"
 #define FACTION_WY_DEATHSQUAD "WY Death Squad"
 #define FACTION_MERCENARY "Mercenary"
 #define FACTION_FREELANCER "Freelancer"
@@ -282,6 +269,7 @@ DEFINE_BITFIELD(whitelist_status, list(
 #define FACTION_COLONIST "Colonist"
 #define FACTION_YAUTJA "Yautja"
 #define FACTION_YAUTJA_YOUNG "Yautja Youngblood"
+#define FACTION_BLOODED_HUNTER "Blooded Hunter"
 #define FACTION_HUNTED "Hunted USCM"
 #define FACTION_HUNTED_CLF "Hunted CLF"
 #define FACTION_HUNTED_UPP "Hunted UPP"
@@ -296,33 +284,52 @@ DEFINE_BITFIELD(whitelist_status, list(
 #define FACTION_LIST_ERT_OTHER list(FACTION_HEFA, FACTION_GLADIATOR, FACTION_PIRATE, FACTION_PIZZA, FACTION_SOUTO)
 #define FACTION_LIST_ERT_ALL list(FACTION_PMC, FACTION_WY_DEATHSQUAD, FACTION_WY, FACTION_CLF, FACTION_CONTRACTOR, FACTION_UPP, FACTION_FREELANCER, FACTION_MERCENARY, FACTION_DUTCH, FACTION_HEFA, FACTION_GLADIATOR, FACTION_PIRATE, FACTION_PIZZA, FACTION_SOUTO, FACTION_MARSHAL, FACTION_TWE, FACTION_HUNTED, FACTION_HUNTED_CLF, FACTION_HUNTED_UPP, FACTION_HUNTED_TWE, FACTION_HUNTED_MERC)
 #define FACTION_LIST_WY list(FACTION_PMC, FACTION_WY_DEATHSQUAD, FACTION_WY)
+#define FACTION_LIST_HYPERDYNE list(FACTION_HYPERDYNE)
 #define FACTION_LIST_UPP list(FACTION_UPP)
 #define FACTION_LIST_CLF list(FACTION_CLF)
-#define FACTION_LIST_TWE list(FACTION_TWE)
+#define FACTION_LIST_TWE list(FACTION_TWE, FACTION_IASF)
 #define FACTION_LIST_FREELANCER list(FACTION_FREELANCER)
 #define FACTION_LIST_CONTRACTOR list(FACTION_CONTRACTOR)
 #define FACTION_LIST_MERCENARY list(FACTION_MERCENARY)
 #define FACTION_LIST_MARSHAL list(FACTION_MARSHAL)
 #define FACTION_LIST_DUTCH list(FACTION_DUTCH)
-#define FACTION_LIST_SURVIVOR_WY list(FACTION_SURVIVOR, FACTION_PMC, FACTION_WY_DEATHSQUAD, FACTION_WY)
+#define FACTION_LIST_SURVIVOR_WY list(FACTION_SURVIVOR, FACTION_PMC, FACTION_WY)
 #define FACTION_LIST_SURVIVOR_NSPA list(FACTION_SURVIVOR, FACTION_NSPA, FACTION_TWE)
-#define FACTION_LIST_MARINE_WY list(FACTION_MARINE, FACTION_PMC, FACTION_WY_DEATHSQUAD, FACTION_WY)
+#define FACTION_LIST_SURVIVOR_IASF list(FACTION_SURVIVOR, FACTION_IASF, FACTION_TWE)
+#define FACTION_LIST_SURVIVOR_PAP list(FACTION_SURVIVOR, FACTION_PAP, FACTION_UPP)
+#define FACTION_LIST_SURVIVOR_UPP list(FACTION_SURVIVOR, FACTION_UPP)
+#define FACTION_LIST_MARINE_WY list(FACTION_MARINE, FACTION_PMC, FACTION_WY)
 #define FACTION_LIST_MARINE_UPP list(FACTION_MARINE, FACTION_UPP)
 #define FACTION_LIST_MARINE_TWE list(FACTION_MARINE, FACTION_TWE)
-#define FACTION_LIST_YAUTJA list(FACTION_YAUTJA, FACTION_YAUTJA_YOUNG)
+#define FACTION_LIST_YAUTJA list(FACTION_YAUTJA, FACTION_YAUTJA_YOUNG, FACTION_BLOODED_HUNTER)
 #define FACTION_LIST_HUNTED list(FACTION_HUNTED, FACTION_HUNTED_CLF, FACTION_HUNTED_UPP, FACTION_HUNTED_TWE, FACTION_HUNTED_MERC)
+#define FACTION_LIST_COLONY list(FACTION_SURVIVOR, FACTION_COLONIST)
+#define FACTION_LIST_NEUTRAL list(FACTION_NEUTRAL)
+
+/// The list of factions loosely allied with the USCM
+#define FACTION_LIST_MARINE_FAXES list(FACTION_MARINE, FACTION_WY, FACTION_MARSHAL, FACTION_TWE)
 
 // Xenomorphs
 #define FACTION_PREDALIEN "Predalien"
 
-#define FACTION_XENOMORPH "Xenomorph"
-#define FACTION_XENOMORPH_CORRPUTED "Corrupted Xenomoprh"
-#define FACTION_XENOMORPH_ALPHA "Alpha Xenomorph"
-#define FACTION_XENOMORPH_BRAVO "Bravo Xenomorph"
-#define FACTION_XENOMORPH_CHARLIE "Charlie Xenomorph"
-#define FACTION_XENOMORPH_DELTA "Delta Xenomorph"
+#define FACTION_XENOMORPH "Normal Hive"
+#define FACTION_XENOMORPH_CORRUPTED "Corrupted Hive"
+#define FACTION_XENOMORPH_ALPHA "Alpha Hive"
+#define FACTION_XENOMORPH_BRAVO "Bravo Hive"
+#define FACTION_XENOMORPH_CHARLIE "Charlie Hive"
+#define FACTION_XENOMORPH_DELTA "Delta Hive"
+#define FACTION_XENOMORPH_FERAL "Feral Hive"
+#define FACTION_XENOMORPH_FORSAKEN "Forsaken Hive"
+#define FACTION_XENOMORPH_TUTORIAL "Tutorial Hive"
+#define FACTION_XENOMORPH_HELLHOUNDS "Hellhound Pack"
+#define FACTION_XENOMORPH_MUTATED "Mutated Hive"
+#define FACTION_XENOMORPH_TAMED "Tamed Hive"
+#define FACTION_XENOMORPH_RENEGADE "Renegade Hive"
 
-#define FACTION_LIST_XENOMORPH list(FACTION_XENOMORPH, FACTION_XENOMORPH_CORRPUTED, FACTION_XENOMORPH_ALPHA, FACTION_XENOMORPH_BRAVO, FACTION_XENOMORPH_CHARLIE, FACTION_XENOMORPH_DELTA)
+#define FACTION_LIST_XENOMORPH list(FACTION_XENOMORPH, FACTION_XENOMORPH_CORRUPTED, FACTION_XENOMORPH_RENEGADE, FACTION_XENOMORPH_ALPHA, FACTION_XENOMORPH_BRAVO, FACTION_XENOMORPH_CHARLIE, FACTION_XENOMORPH_DELTA, FACTION_XENOMORPH_FERAL, FACTION_XENOMORPH_FORSAKEN, FACTION_XENOMORPH_TUTORIAL, FACTION_XENOMORPH_HELLHOUNDS, FACTION_XENOMORPH_MUTATED, FACTION_XENOMORPH_TAMED)
+#define FACTION_LIST_XENOMORPH_CORRUPTEDLESS (FACTION_LIST_XENOMORPH - FACTION_XENOMORPH_CORRUPTED)
+
+#define DEFAULT_ALLY_BAN_LIST FACTION_LIST_XENOMORPH_CORRUPTEDLESS + FACTION_LIST_HUMANOID
 
 // Faction allegiances within a certain faction.
 

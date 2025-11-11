@@ -14,6 +14,8 @@
 	// soundscape_playlist = list('sound/effects/xylophone1.ogg', 'sound/effects/xylophone2.ogg', 'sound/effects/xylophone3.ogg')
 	ambience_exterior = AMBIENCE_ALMAYER
 	ceiling_muffle = FALSE
+	flags_area = AREA_NOSECURECADES
+	weather_enabled = FALSE
 
 	///Whether this area is used for hijack evacuation progress
 	var/hijack_evacuation_area = FALSE
@@ -68,6 +70,11 @@
 	icon_state = "airoom"
 	fake_zlevel = 1 // upperdeck
 
+/area/almayer/command/cicconference
+	name = "\improper CIC Conference Room"
+	icon_state = "cic"
+	fake_zlevel = 1 // upperdeck
+
 /area/almayer/command/airoom
 	name = "\improper AI Core"
 	icon_state = "airoom"
@@ -80,7 +87,7 @@
 	resin_construction_allowed = FALSE
 
 /area/almayer/command/securestorage
-	name = "\improper Upper Deck Secure Storage"
+	name = "\improper Computer Lab Secure Storage"
 	icon_state = "corporatespace"
 	fake_zlevel = 1 // upperdeck
 
@@ -490,6 +497,9 @@
 /area/almayer/maint/hull/lower/p_bow
 	name = "\improper Lower Deck Port-Bow Hull"
 
+/area/almayer/maint/hull/lower/lower_astronav
+	name = "\improper Lower Deck Weapons Control Maintenance"
+
 /area/almayer/maint/hull/lower/s_bow
 	name = "\improper Lower Deck Starboard-Bow Hull"
 
@@ -560,11 +570,6 @@
 	icon_state = "livingspace"
 	fake_zlevel = 2
 
-/area/almayer/living/auxiliary_officer_office
-	name = "\improper Lower Deck Auxiliary Support Officer office"
-	icon_state = "livingspace"
-	fake_zlevel = 2
-
 /area/almayer/living/cryo_cells
 	name = "\improper Lower Deck Cryo Cells"
 	icon_state = "cryo"
@@ -615,6 +620,16 @@
 	icon_state = "officerstudy"
 	fake_zlevel = 1 // upperdeck
 
+/area/almayer/living/auxiliary_officer_office
+	name = "\improper Upper Deck Auxiliary Support Officer office"
+	icon_state = "livingspace"
+	fake_zlevel = 1 // upperdeck
+
+/area/almayer/living/intel
+	name = "\improper Intelligence Officer's Bunks"
+	icon_state = "livingspace"
+	fake_zlevel = 1 // upperdeck
+
 /area/almayer/living/cafeteria_port
 	name = "\improper Cafeteria Port"
 	icon_state = "food"
@@ -638,6 +653,11 @@
 /area/almayer/living/offices
 	name = "\improper Lower Deck Conference Office"
 	icon_state = "briefing"
+	fake_zlevel = 2 // lowerdeck
+
+/area/almayer/living/offices/cryo
+	name = "\improper Support Crew Cryogenics Bay"
+	icon_state = "cryo"
 	fake_zlevel = 2 // lowerdeck
 
 /area/almayer/living/offices/flight
@@ -906,3 +926,85 @@
 /area/almayer/evacuation/stranded/pod16
 /area/almayer/evacuation/stranded/pod17
 /area/almayer/evacuation/stranded/pod18
+
+//Mid-Deck
+
+/area/almayer/middeck
+	name = "USS Almayer - Middle Deck"
+	allow_construction = FALSE
+	icon_state = "lowerhull"
+
+/area/almayer/middeck/hanger
+	name = "Middle Deck - Hangerbay Catwalks"
+	icon_state = "hangar"
+
+/area/almayer/middeck/medical
+	name = "Middle Deck - Medical Catwalks"
+	icon_state = "medical"
+
+/area/almayer/middeck/engineer
+	name = "Middle Deck - Engineering Catwalks"
+	icon_state = "workshop"
+
+/area/almayer/middeck/req
+	name = "Middle Deck - Requisition Catwalks"
+	icon_state = "req"
+
+/area/almayer/middeck/briefing
+	name = "Middle Deck - Briefing Catwalks"
+	icon_state = "briefing"
+
+/area/almayer/middeck/maintenance
+	name = "\improper Middle Deck Maintenance - Parent"
+
+//Bow
+
+/area/almayer/middeck/maintenance/bow
+	name = "\improper Middle Deck Maintenance - Bow"
+
+/area/almayer/middeck/maintenance/pb
+	name = "\improper Middle Deck Maintenance - Port-Bow"
+
+/area/almayer/middeck/maintenance/sb
+	name = "\improper Middle Deck Maintenance - Starboard-Bow"
+
+//Fore
+
+/area/almayer/middeck/maintenance/amidship
+	name = "\improper Middle Deck Maintenance - Amidship"
+
+/area/almayer/middeck/maintenance/sf
+	name = "\improper Middle Deck Maintenance - Starboard-Fore"
+
+/area/almayer/middeck/maintenance/sp
+	name = "\improper Middle Deck Maintenance - Port-Fore"
+
+//Aft
+
+/area/almayer/middeck/maintenance/aft
+	name = "\improper Middle Deck Maintenance - Aft"
+
+/area/almayer/middeck/maintenance/saft
+	name = "\improper Middle Deck Maintenance - Starboard-Aft"
+
+/area/almayer/middeck/maintenance/paft
+	name = "\improper Middle Deck Maintenance - Port-Aft"
+
+//Admin Lower Level
+
+/area/almayer/underdeck/
+	name = "USS Almayer - Under Deck"
+	allow_construction = FALSE
+	icon_state = "lowerhull"
+
+/area/almayer/underdeck/hangar
+	name = "USS Almayer - Under Deck Hangar"
+	icon_state = "hangar"
+
+/area/almayer/underdeck/req
+	name = "USS Almayer - Under Deck Cargo"
+	icon_state = "req"
+
+/area/almayer/underdeck/vehicle
+	name = "USS Almayer - Under Deck Vehicle Bay"
+	icon_state = "req"

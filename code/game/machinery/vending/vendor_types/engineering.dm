@@ -37,10 +37,11 @@
 		list("TOOLS", -1, null, null),
 		list("Blowtorch", floor(scale * 4), /obj/item/tool/weldingtool, VENDOR_ITEM_REGULAR),
 		list("Crowbar", floor(scale * 4), /obj/item/tool/crowbar, VENDOR_ITEM_REGULAR),
-		list("ME3 Hand Welder", floor(scale * 2), /obj/item/tool/weldingtool/simple, VENDOR_ITEM_REGULAR),
+		list("Seegson MCT", floor(scale * 2), /obj/item/tool/weldingtool/simple, VENDOR_ITEM_REGULAR),
 		list("Screwdriver", floor(scale * 4), /obj/item/tool/screwdriver, VENDOR_ITEM_REGULAR),
 		list("Wirecutters", floor(scale * 4), /obj/item/tool/wirecutters, VENDOR_ITEM_REGULAR),
-		list("Wrench", floor(scale * 4), /obj/item/tool/wrench, VENDOR_ITEM_REGULAR)
+		list("Wrench", floor(scale * 4), /obj/item/tool/wrench, VENDOR_ITEM_REGULAR),
+		list("Light Replacer", floor(scale * 4), /obj/item/device/lightreplacer, VENDOR_ITEM_REGULAR)
 	)
 
 /obj/structure/machinery/cm_vending/sorted/tech/comtech_tools
@@ -64,7 +65,8 @@
 		list("Wirecutters", floor(scale * 4), /obj/item/tool/wirecutters, VENDOR_ITEM_REGULAR),
 		list("Wrench", floor(scale * 4), /obj/item/tool/wrench, VENDOR_ITEM_REGULAR),
 		list("Multitool", floor(scale * 4), /obj/item/device/multitool, VENDOR_ITEM_REGULAR),
-		list("ME3 Hand Welder", floor(scale * 2), /obj/item/tool/weldingtool/simple, VENDOR_ITEM_REGULAR),
+		list("Seegson MCT", floor(scale * 2), /obj/item/tool/weldingtool/simple, VENDOR_ITEM_REGULAR),
+		list("Light Replacer", floor(scale * 4), /obj/item/device/lightreplacer, VENDOR_ITEM_REGULAR),
 
 		list("UTILITY", -1, null, null),
 		list("Sentry Gun Network Laptop", 4, /obj/item/device/sentry_computer, VENDOR_ITEM_REGULAR),

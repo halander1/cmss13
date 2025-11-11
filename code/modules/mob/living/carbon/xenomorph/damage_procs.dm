@@ -44,7 +44,7 @@
 		return
 	return ..()
 
-/mob/living/carbon/xenomorph/ex_act(severity, direction, datum/cause_data/cause_data, pierce=0)
+/mob/living/carbon/xenomorph/ex_act(severity, direction, datum/cause_data/cause_data, pierce=0, enviro=FALSE)
 
 	if(body_position == LYING_DOWN && direction)
 		severity *= EXPLOSION_PRONE_MULTIPLIER
@@ -54,9 +54,6 @@
 
 	last_damage_data = istype(cause_data) ? cause_data : create_cause_data(cause_data)
 
-	if(severity > EXPLOSION_THRESHOLD_LOW && length(stomach_contents))
-		for(var/mob/M in stomach_contents)
-			M.ex_act(severity - EXPLOSION_THRESHOLD_LOW, last_damage_data, pierce)
 
 	var/b_loss = 0
 	var/f_loss = 0
@@ -83,8 +80,8 @@
 	if (damage >= 0)
 		b_loss += damage * 0.5
 		f_loss += damage * 0.5
-		apply_damage(b_loss, BRUTE)
-		apply_damage(f_loss, BURN)
+		apply_damage(b_loss, BRUTE, enviro=enviro)
+		apply_damage(f_loss, BURN, enviro=enviro)
 		updatehealth()
 
 		var/powerfactor_value = round( damage * 0.05 ,1)
@@ -121,7 +118,8 @@
 		"penetration" = penetration,
 		"armour_break_pr_pen" = armour_break_pr_pen,
 		"armour_break_flat" = armour_break_flat,
-		"armor_integrity" = armor_integrity
+		"armor_integrity" = armor_integrity,
+		"armour_type" = armour_type,
 	)
 	SEND_SIGNAL(src, COMSIG_XENO_PRE_APPLY_ARMOURED_DAMAGE, damagedata)
 	var/modified_damage = armor_damage_reduction(armour_config, damage,
@@ -138,12 +136,11 @@
 
 	return modified_damage
 
-/mob/living/carbon/xenomorph/apply_damage(damage = 0, damagetype = BRUTE, def_zone = null, used_weapon = null, sharp = 0, edge = 0, force = FALSE)
+/mob/living/carbon/xenomorph/apply_damage(damage = 0, damagetype = BRUTE, def_zone = null, used_weapon = null, sharp = 0, edge = 0, force = FALSE, enviro = FALSE)
 	if(!damage)
 		return
 
-
-	var/list/damagedata = list("damage" = damage)
+	var/list/damagedata = list("damage" = damage, "enviro" = enviro)
 	if(SEND_SIGNAL(src, COMSIG_XENO_TAKE_DAMAGE, damagedata, damagetype) & COMPONENT_BLOCK_DAMAGE)
 		return
 	damage = damagedata["damage"]
@@ -159,7 +156,8 @@
 
 	var/list/damage_data = list(
 		"bonus_damage" = 0,
-		"damage" = damage
+		"damage" = damage,
+		"enviro" = enviro
 	)
 	SEND_SIGNAL(src, COMSIG_BONUS_DAMAGE, damage_data)
 	damage += damage_data["bonus_damage"]
@@ -275,6 +273,8 @@
 
 		for(var/mob/living/carbon/human/victim in orange(radius, src)) //Loop through all nearby victims, including the tile.
 			splash_chance = 65 - (i * 5)
+			if(HAS_TRAIT(victim, TRAIT_HAULED))
+				continue
 			if(victim.loc == loc)
 				splash_chance += 30 //Same tile? BURN
 			if(victim.species?.acid_blood_dodge_chance)

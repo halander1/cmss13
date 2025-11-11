@@ -33,6 +33,10 @@
 	for(var/action_path in actions_to_add)
 		give_action(xeno, action_path)
 
+	var/datum/action/minimap/ref = xeno.minimap_ref.resolve()
+	ref.remove_from(xeno)
+	ref.give_to(xeno, ref)
+
 	// Update the xeno's behavior delegate.
 	if(behavior_delegate_type)
 		if(xeno.behavior_delegate)
@@ -85,7 +89,7 @@
 	if(!can_take_strain())
 		return
 	// Show the user the strain's description, and double check that they want it.
-	if(tgui_alert(usr, "[initial(chosen_strain.description)]", "Choose Strain", list("Confirm Mutation", "Cancel")) != "Confirm Mutation")
+	if(tgui_alert(usr, "[initial(chosen_strain.description)]", "Choose Strain", list("Mutate", "Cancel")) != "Mutate")
 		return
 	// One more time after they confirm.
 	if(!can_take_strain())
@@ -94,6 +98,7 @@
 	// Create the strain datum and apply it to the xeno.
 	var/datum/xeno_strain/strain_instance = new chosen_strain()
 	if(strain_instance._add_to_xeno(src))
+		overlays -= acid_overlay
 		xeno_jitter(1.5 SECONDS)
 		// If it applied successfully, add it to the logs.
 		log_strain("[name] purchased strain '[strain_instance.type]'")
@@ -125,6 +130,8 @@
 
 	new_xeno.xeno_jitter(1.5 SECONDS)
 	if(evolution_stored == evolution_threshold)
+		if(new_xeno.caste_type == XENO_CASTE_FACEHUGGER)
+			return
 		give_action(new_xeno, /datum/action/xeno_action/onclick/evolve)
 
 	// If it applied successfully, add it to the logs.

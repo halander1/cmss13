@@ -419,6 +419,9 @@
 
 		// Since the reagent is deleted on use it's easier to make a new one instead of snowflake checking
 		var/obj/item/reagent_container/new_container = new container.type(src)
+		// Preserve transfer amount from the original container
+		if(istype(container, /obj/item/reagent_container) && istype(new_container, /obj/item/reagent_container))
+			new_container.amount_per_transfer_from_this = container.amount_per_transfer_from_this
 		qdel(container)
 		user.put_in_hands(new_container)
 		return
@@ -535,6 +538,7 @@
 /obj/structure/machinery/cm_vending/sorted/medical/Initialize()
 	. = ..()
 
+	AddElement(/datum/element/corp_label/wy)
 	// If this is a medlinked vendor (that needs a link) and isn't dynamically changing it will periodically restock itself
 	if(vend_flags & VEND_STOCK_DYNAMIC)
 		return
@@ -678,6 +682,13 @@
 	vendor_theme = VENDOR_THEME_CLF
 	allow_supply_link_restock = FALSE
 
+/obj/structure/machinery/cm_vending/sorted/medical/upp
+	name = "\improper Medical Equipment Vendor"
+	desc = "A vending machine dispensing various pieces of medical equipment."
+	req_one_access = list(ACCESS_UPP_GENERAL)
+	req_access = null
+	vendor_theme = VENDOR_THEME_UPP
+
 /obj/structure/machinery/cm_vending/sorted/medical/marinemed
 	name = "\improper ColMarTech MarineMed"
 	desc = "Medical pharmaceutical dispenser with basic medical supplies for marines."
@@ -715,6 +726,13 @@
 	vendor_theme = VENDOR_THEME_CLF
 	allow_supply_link_restock = FALSE
 
+/obj/structure/machinery/cm_vending/sorted/medical/marinemed/upp
+	name = "\improper Basic Medical Supplies Vendor"
+	desc = "A vending machine dispensing basic medical supplies."
+	req_one_access = list(ACCESS_UPP_GENERAL)
+	req_access = null
+	vendor_theme = VENDOR_THEME_UPP
+
 /obj/structure/machinery/cm_vending/sorted/medical/blood
 	name = "\improper MM Blood Dispenser"
 	desc = "The MarineMed brand blood dispensary is the premier, top-of-the-line blood dispenser of 2105! Get yours today!" //Don't update this year, the joke is it's old.
@@ -747,6 +765,11 @@
 	req_access = null
 	vendor_theme = VENDOR_THEME_CLF
 	allow_supply_link_restock = FALSE
+
+/obj/structure/machinery/cm_vending/sorted/medical/blood/upp
+	req_one_access = list(ACCESS_UPP_GENERAL)
+	req_access = null
+	vendor_theme = VENDOR_THEME_UPP
 
 
 //------------WALL MED VENDORS------------
@@ -852,3 +875,7 @@
 		list("Souto Grape", 1, /obj/item/reagent_container/food/drinks/cans/souto/grape, VENDOR_ITEM_REGULAR),
 		list("Diet Souto Grape", 1, /obj/item/reagent_container/food/drinks/cans/souto/diet/grape, VENDOR_ITEM_REGULAR)
 	)
+
+/obj/structure/machinery/cm_vending/sorted/medical/wall_med/souto/Initialize()
+	. = ..()
+	AddElement(/datum/element/corp_label/souta)

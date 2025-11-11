@@ -59,7 +59,7 @@
 	acid_blood_damage = 15
 	base_actions = list(
 		/datum/action/xeno_action/onclick/xeno_resting,
-		/datum/action/xeno_action/onclick/regurgitate,
+		/datum/action/xeno_action/onclick/release_haul,
 		/datum/action/xeno_action/watch_xeno,
 		/datum/action/xeno_action/activable/tail_stab,
 		/datum/action/xeno_action/activable/corrosive_acid/weak,
@@ -67,7 +67,6 @@
 		/datum/action/xeno_action/onclick/plant_weeds/lesser, //first macro
 		/datum/action/xeno_action/onclick/choose_resin, //second macro
 		/datum/action/xeno_action/activable/secrete_resin, //third macro
-		/datum/action/xeno_action/onclick/tacmap,
 		)
 	inherent_verbs = list(
 		/mob/living/carbon/xenomorph/proc/vent_crawl,

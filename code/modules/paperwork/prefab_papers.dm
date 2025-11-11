@@ -43,7 +43,7 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 			for(var/obj/item/P in src)
 				dat += "<tr><td><a href='byond://?src=\ref[src];retrieve=\ref[P]'>[P.name]</a></td></tr>"
 			dat += "</table></center>"
-			show_browser(user, dat, name, "filingcabinet", "size=350x300")
+			show_browser(user, dat, name, "filingcabinet", width = 350, height = 300)
 			return
 		if("Document")
 			if(remaining_documents <= 0)
@@ -58,6 +58,9 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 		return FALSE
 	var/chosen = tgui_input_list(usr, "What document do you need?", "Choose Document", available_documents)
 	var/selected = GLOB.prefab_papers[chosen].type
+	if(!user.Adjacent(src))
+		return
+
 	var/obj/item/paper/prefab/document = new selected
 	document.forceMove(user.loc)
 	user.put_in_hands(document)
@@ -109,19 +112,26 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 //########################################
 //########################################
 //########################################
-/obj/item/paper/prefab
+/obj/item/paper/prefab // Abstract type (document_title and doc_datum_type are null)
 	is_prefab = TRUE
-	document_title = "BLANK"
+	deffont = "Courier New"
+	signfont = "Times New Roman"
 
 /obj/item/paper/prefab/Initialize()
 	. = ..()
-	name = document_title
+	name = document_title || "BLANK"
+
+/obj/item/paper/prefab/uacqs_notice
+	document_title = "UACQS Inspection Notice"
+	doc_datum_type = /datum/prefab_document/uacqs/commissioner
+	document_category = "UACQS"
 
 // ########## Provost MP Forms  ########## \\
 
 /obj/item/paper/prefab/carbon/military_police
 	name = "Blank MP Document"
 	document_category = PAPER_CATEGORY_MP
+	icon_state = "paper_uscm_words"
 
 /obj/item/paper/prefab/carbon/military_police/ops_report
 	document_title = "PR201 - Operations Report"
@@ -148,6 +158,7 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 /obj/item/paper/prefab/provost
 	name = "Blank Provost Document"
 	document_category = PAPER_CATEGORY_PROVOST
+	icon_state = "paper_uscm_words"
 
 /obj/item/paper/prefab/provost/standard
 	document_title = "PR202 - Provost Missive"
@@ -170,6 +181,7 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 /obj/item/paper/prefab/uscm
 	name = "Blank USCM Document"
 	document_category = PAPER_CATEGORY_USCM
+	icon_state = "paper_uscm_words"
 
 /obj/item/paper/prefab/uscm/ops_report
 	document_title = "UAM421 - Operations Report"
@@ -180,6 +192,7 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 /obj/item/paper/prefab/uscm_highcom
 	name = "Blank USCMHC Document"
 	document_category = PAPER_CATEGORY_USCM_HC
+	icon_state = "paper_uscm_words"
 
 /obj/item/paper/prefab/uscm_highcom/arrest_warrant
 	document_title = "UAM211 - Arrest Warrant"
@@ -198,9 +211,10 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 /obj/item/paper/prefab/liaison
 	name = "Blank WY Document"
 	document_category = PAPER_CATEGORY_LIAISON
+	icon_state = "paper_wy_words"
 
 /obj/item/paper/prefab/liaison/ops_report
-	document_title = "WY435 - Liaison Operations Report"
+	document_title = "WY435 - Local Operations Report"
 	doc_datum_type = /datum/prefab_document/wey_yu/liaison/ops_report
 
 /obj/item/paper/prefab/liaison/preserve_intent
@@ -219,11 +233,16 @@ GLOBAL_REFERENCE_LIST_INDEXED(prefab_papers, /obj/item/paper/prefab, document_ti
 	document_title = "WY442 - Non Disclosure Agreement"
 	doc_datum_type = /datum/prefab_document/wey_yu/liaison/nda_long
 
+/obj/item/paper/prefab/liaison/nda_long/uscm
+	document_title = "WY442-B - Non Disclosure Agreement (USCM)"
+	doc_datum_type = /datum/prefab_document/wey_yu/liaison/nda_long/uscm
+
 // ########## Wey-Yu HC Forms  ########## \\
 
 /obj/item/paper/prefab/wey_yu
 	name = "Blank WYC Document"
 	document_category = PAPER_CATEGORY_WEYYU_HC
+	icon_state = "paper_wy_words"
 
 /obj/item/paper/prefab/wey_yu/standard
 	document_title = "WY101 - Directorate Communication"

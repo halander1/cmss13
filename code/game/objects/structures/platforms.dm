@@ -115,7 +115,7 @@
 		to_chat(user, SPAN_WARNING("Its already destroyed!"))
 		return XENO_NO_DELAY_ACTION
 
-	if(stat & explo_proof)
+	if(explo_proof)
 		to_chat(user, SPAN_WARNING("Its too strong for us!"))
 		return XENO_NO_DELAY_ACTION
 
@@ -232,6 +232,14 @@
 /obj/structure/platform/metal/stair_cut/shiva_right
 	icon_state = "shiva_stair_alt"
 
+/obj/structure/platform/metal/stair_cut/almayer_smooth_left
+	icon_state = "platform_sm_stair"
+	explo_proof = TRUE
+
+/obj/structure/platform/metal/stair_cut/almayer_smooth_right
+	icon_state = "platform_sm_stair_alt"
+	explo_proof = TRUE
+
 //------------------------------//
 //    Stone Stairs Platforms    //
 //------------------------------//
@@ -245,6 +253,12 @@
 
 /obj/structure/platform/stone/stair_cut/shiva_right
 	icon_state = "strata_platform_stair_alt"
+
+/obj/structure/platform/stone/stair_cut/soro_left
+	icon_state = "strata_rock_platform_stair"
+
+/obj/structure/platform/stone/stair_cut/soro_right
+	icon_state = "strata_rock_platform_stair_alt"
 
 /obj/structure/platform/stone/stair_cut/kutjevo_left
 	icon_state = "kutjevo_rock_stair"
@@ -285,6 +299,18 @@
 /obj/structure/platform/metal/almayer/west
 	dir = WEST
 
+/obj/structure/platform/metal/almayer_smooth
+	icon_state = "platform_sm"
+	explo_proof = TRUE
+
+/obj/structure/platform/metal/almayer_smooth/north
+	dir = NORTH
+
+/obj/structure/platform/metal/almayer_smooth/east
+	dir = EAST
+
+/obj/structure/platform/metal/almayer_smooth/west
+	dir = WEST
 
 /obj/structure/platform/metal/kutjevo
 	icon_state = "kutjevo_platform"
@@ -341,6 +367,26 @@
 /obj/structure/platform/metal/strata/west
 	dir = WEST
 
+// Hunter Platforms
+
+/obj/structure/platform/metal/hunter
+	icon_state = "hunter_platform"
+	name = "raised metal edge"
+	desc =  "A raised level of metal, often used to elevate areas above others, or construct bridges. You could probably climb it."
+
+/obj/structure/platform/metal/hunter/north
+	dir = NORTH
+/obj/structure/platform/metal/hunter/east
+	dir = EAST
+/obj/structure/platform/metal/hunter/west
+	dir = WEST
+
+/obj/structure/prop/hunter/fake_platform/hunter/stair_cut/hunter_left
+	icon_state = "hunter_platform_stair"
+
+/obj/structure/prop/hunter/fake_platform/hunter/stair_cut/hunter_right
+	icon_state = "hunter_platform_stair_alt"
+
 //------------------------------------//
 //       Rock based Platforms         //
 //------------------------------------//
@@ -369,6 +415,19 @@
 /obj/structure/platform/stone/strata/west
 	dir = WEST
 
+// Soro Rock
+
+/obj/structure/platform/stone/soro
+	name = "rock edge"
+	desc = "A solid chunk of desolate rocks. Looks like you could climb it."
+	icon_state = "strata_rock_platform"
+
+/obj/structure/platform/stone/soro/north
+	dir = NORTH
+/obj/structure/platform/stone/soro/east
+	dir = EAST
+/obj/structure/platform/stone/soro/west
+	dir = WEST
 
 /obj/structure/platform/stone/mineral
 	icon_state = "stone"
@@ -426,6 +485,30 @@
 /obj/structure/platform_decoration/metal/almayer/southwest
 	dir = SOUTHWEST
 
+/obj/structure/platform_decoration/metal/almayer_smooth
+	icon_state = "platform_sm_deco"
+	explo_proof = TRUE
+
+/obj/structure/platform_decoration/metal/almayer_smooth/north
+	dir = NORTH
+
+/obj/structure/platform_decoration/metal/almayer_smooth/east
+	dir = EAST
+
+/obj/structure/platform_decoration/metal/almayer_smooth/west
+	dir = WEST
+
+/obj/structure/platform_decoration/metal/almayer_smooth/northeast
+	dir = NORTHEAST
+
+/obj/structure/platform_decoration/metal/almayer_smooth/northwest
+	dir = NORTHWEST
+
+/obj/structure/platform_decoration/metal/almayer_smooth/southeast
+	dir = SOUTHEAST
+
+/obj/structure/platform_decoration/metal/almayer_smooth/southwest
+	dir = SOUTHWEST
 
 /obj/structure/platform_decoration/metal/kutjevo
 	name = "raised metal corner"
@@ -478,6 +561,21 @@
 /obj/structure/platform_decoration/metal/strata/west
 	dir = WEST
 
+// Hunter Deco
+
+/obj/structure/platform_decoration/metal/hunter
+	name = "raised metal corner"
+	desc = "The corner of what appears to be raised piece of metal, often used to imply the illusion of elevation in non-Euclidean 2d spaces. But you don't know that, you're just a spaceman with a rifle."
+	icon_state = "hunter_platform_deco"
+	layer = LOWER_ITEM_LAYER
+
+/obj/structure/platform_decoration/metal/hunter/north
+	dir = NORTH
+/obj/structure/platform_decoration/metal/hunter/east
+	dir = EAST
+/obj/structure/platform_decoration/metal/hunter/west
+	dir = WEST
+
 //------------------------------------//
 // Rock based Platforms "decoration"  //
 //------------------------------------//
@@ -505,6 +603,18 @@
 /obj/structure/platform_decoration/stone/strata/east
 	dir = EAST
 /obj/structure/platform_decoration/stone/strata/west
+	dir = WEST
+
+/obj/structure/platform_decoration/stone/soro
+	name = "rock corner"
+	desc = "Solid chunks of desolate rocks."
+	icon_state = "strata_rock_platform_deco"
+
+/obj/structure/platform_decoration/stone/soro/north
+	dir = NORTH
+/obj/structure/platform_decoration/stone/soro/east
+	dir = EAST
+/obj/structure/platform_decoration/stone/soro/west
 	dir = WEST
 
 

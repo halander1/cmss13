@@ -11,8 +11,7 @@
 	pickupvol = 7
 	dropvol = 15
 	matter = null
-						//Guns generally have their own unique levels.
-	w_class = SIZE_MEDIUM
+	w_class = SIZE_MEDIUM //Guns generally have their own unique levels.
 	throwforce = 5
 	throw_speed = SPEED_VERY_FAST
 	throw_range = 5
@@ -47,6 +46,8 @@
 	var/fire_rattle = null
 	var/unload_sound = 'sound/weapons/flipblade.ogg'
 	var/empty_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	//Sound for when you try to shoot but the gun is empty.
+	var/list/dry_fire_sound = list('sound/weapons/gun_empty.ogg')
 	//We don't want these for guns that don't have them.
 	var/reload_sound = null
 	var/cocked_sound = null
@@ -176,6 +177,10 @@
 	var/random_stock_chance = 100
 	///Used when a gun will have a chance to spawn with attachments.
 	var/list/random_spawn_stock = list()
+	///Chance for random spawn to give this gun a cosmetic attachment.
+	var/random_cosmetic_chance = 100
+	///Used when a gun will have a chance to spawn with attachments.
+	var/list/random_spawn_cosmetic = list()
 	///This will link to one of the attachments, or remain null.
 	var/obj/item/attachable/attached_gun/active_attachable = null
 	///What attachments this gun starts with THAT CAN BE REMOVED. Important to avoid nuking the attachments on restocking! Added on New()
@@ -243,6 +248,12 @@
 	/// The multiplier for how much slower this should fire in automatic mode. 1 is normal, 1.2 is 20% slower, 2 is 100% slower, etc. Protected due to it never needing to be edited.
 	VAR_PROTECTED/autofire_slow_mult = 1
 
+	/// Whether the weapon has expended it's "second wind" and lost its acid protection.
+	var/has_second_wind = TRUE
+
+	/// the icon for spinning the gun
+	var/temp_icon = null
+
 /**
  * An assoc list where the keys are fire delay group string defines
  * and the keys are when the guns of the group can be fired again
@@ -260,15 +271,14 @@
 /obj/item/weapon/gun/Initialize(mapload, spawn_empty) //You can pass on spawn_empty to make the sure the gun has no bullets or mag or anything when created.
 	. = ..() //This only affects guns you can get from vendors for now. Special guns spawn with their own things regardless.
 	base_gun_icon = icon_state
-	attachable_overlays = list("muzzle" = null, "rail" = null, "under" = null, "stock" = null, "mag" = null, "special" = null)
+	attachable_overlays = list("muzzle" = null, "rail" = null, "under" = null, "stock" = null, "mag" = null, "special" = null, "cosmetic" = null)
 
 	LAZYSET(item_state_slots, WEAR_BACK, item_state)
-	LAZYSET(item_state_slots, WEAR_JACKET, item_state)
+	LAZYSET(item_state_slots, WEAR_J_STORE, item_state)
 
 	if(current_mag)
 		if(spawn_empty && !(flags_gun_features & GUN_INTERNAL_MAG)) //Internal mags will still spawn, but they won't be filled.
 			current_mag = null
-			update_icon()
 		else
 			current_mag = new current_mag(src, spawn_empty? 1:0)
 			replace_ammo(null, current_mag)
@@ -485,6 +495,14 @@
 			update_attachable(S.slot)
 			attachmentchoice = FALSE
 
+	var/cosmeticchance = random_cosmetic_chance
+	if(prob(cosmeticchance) && !attachments["cosmetic"]) // Cosmetic
+		attachmentchoice = SAFEPICK(random_spawn_cosmetic)
+		if(attachmentchoice)
+			var/obj/item/attachable/C = new attachmentchoice(src)
+			C.Attach(src)
+			update_attachable(C.slot)
+			attachmentchoice = FALSE
 
 /obj/item/weapon/gun/proc/handle_starting_attachment()
 	if(LAZYLEN(starting_attachment_types))
@@ -492,8 +510,6 @@
 			var/obj/item/attachable/A = new path(src)
 			A.Attach(src)
 			update_attachable(A.slot)
-
-
 
 /obj/item/weapon/gun/emp_act(severity)
 	. = ..()
@@ -592,6 +608,10 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 				dat += "It's loaded[in_chamber?" and has a round chambered":""].<br>"
 		else
 			dat += "It's unloaded[in_chamber?" but has a round chambered":""].<br>"
+
+	if(!unacidable && !explo_proof)
+		dat += "It looks like it [has_second_wind ? SPAN_GREEN("can") : SPAN_RED("can no longer")] survive a significant attack.<br>"
+
 	if(!(flags_gun_features & GUN_UNUSUAL_DESIGN))
 		dat += "<a href='byond://?src=\ref[src];list_stats=1'>\[See combat statistics]</a>"
 
@@ -781,8 +801,12 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	if(user.skills)
 		if(user.skills.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_CIVILIAN && !is_civilian_usable(user))
 			wield_time += 3
-		else
-			wield_time -= 2*user.skills.get_skill_level(SKILL_FIREARMS)
+		else if (user.skills.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_TRAINED)
+			wield_time -= 2*1
+		else if (user.skills.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_SKILLED)
+			wield_time -= 2*1.5
+		else //Max level skill of firearms.
+			wield_time -= 2*2
 
 	update_mouse_pointer(user, TRUE)
 	if(user.client)
@@ -1121,6 +1145,9 @@ and you're good to go.
 /obj/item/weapon/gun/proc/Fire(atom/target, mob/living/user, params, reflex = FALSE, dual_wield)
 	set waitfor = FALSE
 
+	if(!gun_user)
+		gun_user = user
+
 	if(!able_to_fire(user) || !target || !get_turf(user) || !get_turf(target))
 		return NONE
 
@@ -1207,15 +1234,15 @@ and you're good to go.
 	var/bullet_velocity = projectile_to_fire?.ammo?.shell_speed + velocity_add
 
 	if(params) // Apply relative clicked position from the mouse info to offset projectile
-		if(!params["click_catcher"])
-			if(params["vis-x"])
-				projectile_to_fire.p_x = text2num(params["vis-x"])
-			else if(params["icon-x"])
-				projectile_to_fire.p_x = text2num(params["icon-x"])
-			if(params["vis-y"])
-				projectile_to_fire.p_y = text2num(params["vis-y"])
-			else if(params["icon-y"])
-				projectile_to_fire.p_y = text2num(params["icon-y"])
+		if(!params[CLICK_CATCHER])
+			if(params[VIS_X])
+				projectile_to_fire.p_x = text2num(params[VIS_X])
+			else if(params[ICON_X])
+				projectile_to_fire.p_x = text2num(params[ICON_X])
+			if(params[VIS_Y])
+				projectile_to_fire.p_y = text2num(params[VIS_Y])
+			else if(params[ICON_Y])
+				projectile_to_fire.p_y = text2num(params[ICON_Y])
 			var/atom/movable/clicked_target = original_target
 			if(istype(clicked_target))
 				projectile_to_fire.p_x -= clicked_target.bound_width / 2
@@ -1425,6 +1452,7 @@ and you're good to go.
 			check_for_attachment_fire = TRUE
 		else
 			active_attachable.activate_attachment(src, null, TRUE)//No way.
+			return (ATTACKBY_HINT_NO_AFTERATTACK|ATTACKBY_HINT_UPDATE_NEXT_MOVE) //do nothing
 
 	var/fired_by_akimbo = FALSE
 	if(dual_wield)
@@ -1609,6 +1637,8 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 		return TRUE
 	if(user.is_mob_incapacitated())
 		return
+	if(HAS_TRAIT(user, TRAIT_HAULED))
+		return
 	if(world.time < guaranteed_delay_time)
 		return
 	if((world.time < wield_time || world.time < pull_time) && (delay_style & WEAPON_DELAY_NO_FIRE > 0))
@@ -1629,6 +1659,9 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 				else
 					to_chat(user, SPAN_WARNING("You are unable to use firearms."))
 				return
+			if(MODE_HAS_MODIFIER(/datum/gamemode_modifier/ceasefire))
+				to_chat(user, SPAN_WARNING("You will not break the ceasefire by doing that!"))
+				return FALSE
 
 		if(flags_gun_features & GUN_TRIGGER_SAFETY)
 			to_chat(user, SPAN_WARNING("The safety is on!"))
@@ -1692,11 +1725,19 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 	return TRUE
 
 /obj/item/weapon/gun/proc/click_empty(mob/user)
-	if(user)
-		to_chat(user, SPAN_WARNING("<b>*click*</b>"))
-		playsound(user, 'sound/weapons/gun_empty.ogg', 25, 1, 5) //5 tile range
+	var/actual_sound = pick(dry_fire_sound)
+	var/dry_fire_text
+	var/obj/item/weapon/gun/current_gun = src
+	if(istype(current_gun, /obj/item/weapon/gun/flamer))
+		dry_fire_text = "<b>*pshhhh*</b>"
 	else
-		playsound(src, 'sound/weapons/gun_empty.ogg', 25, 1, 5)
+		dry_fire_text = "<b>*click*</b>"
+
+	if(user)
+		to_chat(user, SPAN_WARNING(dry_fire_text))
+		playsound(user, actual_sound, 25, 1, 5) //5 tile range
+	else
+		playsound(current_gun, actual_sound, 25, 1, 5)
 
 /obj/item/weapon/gun/proc/display_ammo(mob/user)
 	// Do not display ammo if you have an attachment
@@ -1762,8 +1803,12 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 		var/skill_accuracy = 0
 		if(user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_CIVILIAN && !is_civilian_usable(user))
 			skill_accuracy = -1
-		else
-			skill_accuracy = user.skills.get_skill_level(SKILL_FIREARMS)
+		else if (user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_TRAINED)
+			skill_accuracy = 1
+		else  if(user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_SKILLED)
+			skill_accuracy = 1.5
+		else // Max level skill of firearms.
+			skill_accuracy = 2
 		if(skill_accuracy)
 			gun_accuracy_mult += skill_accuracy * HIT_ACCURACY_MULT_TIER_3 // Accuracy mult increase/decrease per level is equal to attaching/removing a red dot sight
 
@@ -1799,6 +1844,9 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 			playsound(user, actual_sound, 25, firing_sndfreq)
 
 /obj/item/weapon/gun/proc/simulate_scatter(obj/projectile/projectile_to_fire, atom/target, turf/curloc, turf/targloc, mob/user, bullets_fired = 1)
+	if(curloc.z != targloc.z)
+		return target
+
 	var/fire_angle = Get_Angle(curloc, targloc)
 	var/total_scatter_angle = projectile_to_fire.scatter
 
@@ -1822,8 +1870,12 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 	if(user && user.mind && user.skills)
 		if(user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_CIVILIAN && !is_civilian_usable(user))
 			total_scatter_angle += SCATTER_AMOUNT_TIER_7
-		else
-			total_scatter_angle -= user.skills.get_skill_level(SKILL_FIREARMS)*SCATTER_AMOUNT_TIER_8
+		else if (user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_TRAINED)
+			total_scatter_angle -= 1*SCATTER_AMOUNT_TIER_8
+		else if (user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_SKILLED)
+			total_scatter_angle -= 1.5*SCATTER_AMOUNT_TIER_8
+		else // Max level skill of firearms.
+			total_scatter_angle -= 2*SCATTER_AMOUNT_TIER_8
 
 
 	//Not if the gun doesn't scatter at all, or negative scatter.
@@ -1861,8 +1913,12 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 	if(user && user.mind && user.skills)
 		if(user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_CIVILIAN && !is_civilian_usable(user))
 			total_recoil += RECOIL_AMOUNT_TIER_5
-		else
-			total_recoil -= user.skills.get_skill_level(SKILL_FIREARMS)*RECOIL_AMOUNT_TIER_5
+		else if (user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_TRAINED)
+			total_recoil -= 1*RECOIL_AMOUNT_TIER_5
+		else if (user?.skills?.get_skill_level(SKILL_FIREARMS) == SKILL_FIREARMS_SKILLED)
+			total_recoil -= 1.5*RECOIL_AMOUNT_TIER_5
+		else // Max level skill of firearms.
+			total_recoil -= 2*RECOIL_AMOUNT_TIER_5
 
 	if(total_recoil > 0 && (ishuman(user) || HAS_TRAIT(user, TRAIT_OPPOSABLE_THUMBS)))
 		if(total_recoil >= 4)
@@ -1914,7 +1970,7 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 	if(slashed_light)
 		playsound(loc, "alien_claw_metal", 25, 1)
 		xeno.animation_attack_on(src)
-		xeno.visible_message(SPAN_XENOWARNING("\The [xeno] slashes the lights on \the [src]!"), SPAN_XENONOTICE("You slash the lights on \the [src]!"))
+		xeno.visible_message(SPAN_XENOWARNING("[xeno] slashes the lights on [src]!"), SPAN_XENONOTICE("You slash the lights on [src]!"))
 	return XENO_ATTACK_ACTION
 
 /// Setter proc to toggle burst firing
@@ -2021,7 +2077,7 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 	SIGNAL_HANDLER
 
 	var/list/modifiers = params2list(params)
-	if(modifiers["shift"] || modifiers["middle"] || modifiers["right"])
+	if(modifiers[SHIFT_CLICK] || modifiers[MIDDLE_CLICK] || modifiers[RIGHT_CLICK] || modifiers[BUTTON4] || modifiers[BUTTON5])
 		return
 
 	// Don't allow doing anything else if inside a container of some sort, like a locker.
@@ -2078,3 +2134,84 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 /// Getter for gun_user
 /obj/item/weapon/gun/proc/get_gun_user()
 	return gun_user
+
+/obj/item/weapon/gun/proc/fire_into_air(mob/user)
+	if(!user || !isturf(user.loc) || !current_mag || !current_mag.current_rounds)
+		return
+
+	var/turf/gun_turf = user.loc
+	var/area/gun_area = gun_turf.loc
+
+	if(user.a_intent < INTENT_GRAB)
+		return TRUE
+
+	if(!skillcheck(user, SKILL_LEADERSHIP, SKILL_LEAD_MASTER)) // XO and CO
+		return TRUE
+
+	if(user.action_busy)
+		return
+
+	if(!do_after(user, 1.5 SECONDS, INTERRUPT_ALL, BUSY_ICON_HOSTILE))
+		return
+
+	if(!current_mag || !current_mag.current_rounds)
+		return
+
+	current_mag.current_rounds--
+
+	if(gun_area.ceiling <= CEILING_GLASS)
+		gun_turf.ceiling_debris()
+
+	user.visible_message(SPAN_HIGHDANGER(uppertext("[user] FIRES THEIR [name] INTO THE AIR!")),
+	SPAN_HIGHDANGER(uppertext("YOU FIRE YOUR [name] INTO THE AIR!")))
+
+	playsound(user, fire_sound, 120, FALSE)
+
+	FOR_DVIEW(var/mob/mob, world.view, user, HIDE_INVISIBLE_OBSERVER)
+		if(mob && mob.client)
+			if(ishuman(mob))
+				shake_camera(mob, 3, 4)
+	FOR_DVIEW_END
+
+	update_icon()
+
+/obj/item/weapon/gun/animation_spin(speed, loop_amount, clockwise, sections, angular_offset, pixel_fuzz)
+	if(!temp_icon)
+		temp_icon = icon
+		var/icon/spin_32 = icon(icon, icon_state)
+		spin_32.Crop(1,1,44,32)
+		spin_32.Scale(38, 32)
+		icon = spin_32
+
+	. = ..()
+	addtimer(CALLBACK(src, PROC_REF(icon_reset)),(speed*loop_amount)-0.8, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_NO_HASH_WAIT)
+
+/obj/item/weapon/gun/proc/icon_reset()
+	if(temp_icon)
+		icon = temp_icon
+	temp_icon = null
+
+/obj/item/weapon/gun/ex_act(severity, explosion_direction)
+	var/msg = pick("is destroyed by the blast!", "is obliterated by the blast!", "shatters as the explosion engulfs it!", "disintegrates in the blast!", "perishes in the blast!", "is mangled into uselessness by the blast!")
+	explosion_throw(severity, explosion_direction)
+	switch(severity)
+		if(0 to EXPLOSION_THRESHOLD_LOW)
+			if(prob(5))
+				if(!explo_proof && !has_second_wind)
+					visible_message(SPAN_DANGER(SPAN_UNDERLINE("[src] [msg]")))
+					deconstruct(FALSE)
+				else
+					has_second_wind = FALSE
+					visible_message(SPAN_DANGER(SPAN_UNDERLINE("[src] barely survives the blast!")))
+		if(EXPLOSION_THRESHOLD_LOW to EXPLOSION_THRESHOLD_MEDIUM)
+			if(prob(50))
+				if(!explo_proof && !has_second_wind)
+					deconstruct(FALSE)
+					visible_message(SPAN_DANGER(SPAN_UNDERLINE("[src] [msg]")))
+				else
+					has_second_wind = FALSE
+					visible_message(SPAN_DANGER(SPAN_UNDERLINE("[src] barely survives the blast!")))
+		if(EXPLOSION_THRESHOLD_MEDIUM to INFINITY)
+			if(!explo_proof) // heavy explosions don't care if the weapon has it's protection left; else you'd get weird situations where OBs/yautja SD/etc leave damaged but working guns everywhere.
+				visible_message(SPAN_DANGER(SPAN_UNDERLINE("[src] [msg]")))
+				deconstruct(FALSE)
