@@ -5,16 +5,23 @@
 	var/desc = "You shouldn't be seeing this."
 	///the price of the tech
 	var/value = 1
+	// Added so we don't have to print disks all the time
+	var/is_item = TRUE
 	///path to the item
+
 	var/item_path
 	///if it's an unlock in a lathe, what unlock is it?
 	var/list/tech_unlock = list()
 	///is this tech or an actual item?
+
 	var/item_type
 	///should this add a new category? also stops from being purchaseable
 	var/add_category = FALSE
 	///can this be bought multiple times?
 	var/can_rebuy = FALSE
+
+
+
 
 /datum/ordnance_tech/proc/purchase(turf/location)
 	if(isnull(item_path))
@@ -66,18 +73,24 @@
 /datum/ordnance_tech/technology
 	name = "Technologies"
 	item_type = ORDNANCE_UPGRADE_TECH
-	item_path = /obj/item/ordnance/tech_disk
+	is_item = FALSE
 	add_category = TRUE
 
 /datum/ordnance_tech/technology/purchase(turf/location)
-	if(isnull(item_path))
-		return
-	var/obj/item/ordnance/tech_disk/disk = new item_path(location)
-	disk.name = "technology disk for [name]"
-	disk.desc = "Insert this in an armylathe to obtain this technology."
-	disk.tech_type = item_type
-	disk.tech += tech_unlock
-	playsound(location, 'sound/machines/fax.ogg', 15, 1)
+	// For technologies with is_item = FALSE, we just unlock them directly
+	// No disk printing needed
+
+	// Ensure tech_unlock is a list
+	var/list/techs_to_unlock = islist(tech_unlock) ? tech_unlock : list(tech_unlock)
+
+	for(var/unlock in techs_to_unlock)
+		GLOB.ordnance_research.tech_bought += unlock
+
+	// Update all armylathes with the new technology
+	for(var/obj/structure/machinery/autolathe/armylathe/lathe in GLOB.machines)
+		lathe.update_ordnance_tech(techs_to_unlock)
+
+	playsound(location, 'sound/machines/twobeep.ogg', 15, 1)
 
 /datum/ordnance_tech/technology/plastic_explosive
 	name = "C4 Plastic Casing"
@@ -147,3 +160,49 @@
 	disk.tech_type = item_type
 	disk.tech += tech_unlock
 	playsound(location, 'sound/machines/fax.ogg', 15, 1)
+
+//dispenser upgrades
+
+/datum/ordnance_tech/dispenser_upgrade
+	name = "Dispenser Upgrades"
+	item_type = ORDNANCE_UPGRADE_DISPENSER
+	is_item = FALSE
+	add_category = TRUE
+
+/datum/ordnance_tech/dispenser_upgrade/purchase(turf/location)
+	// Ensure tech_unlock is a list
+	var/list/reagents_to_unlock = islist(tech_unlock) ? tech_unlock : list(tech_unlock)
+
+	// Add to separate dispenser reagents list
+	for(var/reagent in reagents_to_unlock)
+		GLOB.ordnance_research.dispenser_reagents += reagent
+		GLOB.ordnance_research.tech_bought += name // Add the upgrade name for duplicate checking
+
+	// Update all ordnance dispensers with the new reagents
+	for(var/obj/structure/machinery/chem_dispenser/ordnance/dispenser in GLOB.machines)
+		if(!istype(dispenser))
+			continue
+		//dispenser.update_ordnance_reagents(reagents_to_unlock)
+
+	playsound(location, 'sound/machines/twobeep.ogg', 15, 1)
+
+// Example dispenser upgrades - add your own reagent IDs here
+/datum/ordnance_tech/dispenser_upgrade/ammonia_synthesis
+	name = "Ammonia Synthesis Upgrade"
+	desc = "Unlocks access to advanced chemical compounds in the ordnance dispenser."
+	tech_unlock = list("ammonia", "nitrogen")
+	value = 10 //cheap as ammonia is cheap to make but not near efficient
+	add_category = FALSE
+
+/datum/ordnance_tech/dispenser_upgrade/polytrinic_synthesis
+	name = "Polytrinic Synthesis Upgrade"
+	desc = "Unlocks access to advanced chemical compounds in the ordnance dispenser."
+	tech_unlock = list("chlorine", "potassium", "pacid")
+	value = 10
+	add_category = FALSE
+/datum/ordnance_tech/dispenser_upgrade/methane_synthesis
+	name = "Methane Synthesis Upgrade"
+	desc = "Unlocks access to advanced chemical compounds in the ordnance dispenser."
+	tech_unlock = list("methane")
+	value = 25 //Direct synthesis of methane is fairly energy efficient
+	add_category = FALSE

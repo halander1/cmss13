@@ -6,6 +6,8 @@ GLOBAL_DATUM_INIT(ordnance_research, /datum/ordnance_research, new)
 	var/credits_to_allocate = 5
 	/// technology bought so far, if something is in this list then it can't be bought again
 	var/list/tech_bought = list()
+	/// reagents unlocked for dispenser
+	var/list/dispenser_reagents = list()
 	///	photocopier where the explosion photos are sent
 	var/obj/structure/machinery/photocopier/photocopier
 	/// to prevent duplicate photos

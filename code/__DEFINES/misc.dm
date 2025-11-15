@@ -176,6 +176,7 @@
 #define ORDNANCE_UPGRADE_TECH "Technologies"
 #define ORDNANCE_UPGRADE_ITEM "Items"
 #define ORDNANCE_UPGRADE_LATHE "Armylathe Upgrades"
+#define ORDNANCE_UPGRADE_DISPENSER "Dispenser Upgrades"
 #define ARMYLATHE_MATS_UPGRADE "Armylathe Efficiency Upgrade"
 #define CUSTOM_ROCKET "88mm Rocket Tube"
 #define CUSTOM_ROCKET_WARHEAD "88mm Rocket Warhead"

@@ -392,9 +392,45 @@
 	desc = "A complex machine for mixing elements into chemicals. A Wey-Yu product."
 	icon = 'icons/obj/structures/machinery/science_machines.dmi'
 	icon_state = "industry_dispenser"
-	req_skill = SKILL_ENGINEER
-	req_skill_level = SKILL_ENGINEER_MASTER
-	network = "Ordnance"
+	req_skill = SKILL_ENGINEER_TRAINED
+	network = "Research"
+	ui_title = "Ordnance Dispenser 5000"
+	dispensable_reagents = list(
+		"hydrogen",
+		"aluminum",
+		"phosphorus",
+		"iron",
+		"water",
+		"ethanol",
+		"sulphuric acid",
+		"carbon"
+	)
+
+/obj/structure/machinery/chem_dispenser/ordnance/Initialize()
+	. = ..()
+	// Add any reagents unlocked via ordnance research
+	if(GLOB.ordnance_research && length(GLOB.ordnance_research.tech_bought))
+		for(var/reagent in GLOB.ordnance_research.tech_bought)
+			if(reagent in dispensable_reagents)
+				continue
+			// Check if it's a valid reagent ID
+			if(GLOB.chemical_reagents_list[reagent])
+				dispensable_reagents += reagent
+		dispensable_reagents = sortList(dispensable_reagents)
+
+/obj/structure/machinery/chem_dispenser/ordnance/proc/update_ordnance_reagents(list/new_reagents)
+	if(!length(new_reagents))
+		return
+	var/updated = FALSE
+	for(var/reagent in new_reagents)
+		if(reagent in dispensable_reagents)
+			continue
+		// Verify it's a valid reagent
+		if(GLOB.chemical_reagents_list[reagent])
+			dispensable_reagents += reagent
+			updated = TRUE
+	if(updated)
+		dispensable_reagents = sortList(dispensable_reagents)
 
 #undef DISPENSER_UNHACKABLE
 #undef DISPENSER_NOT_HACKED

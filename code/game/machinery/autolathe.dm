@@ -671,6 +671,12 @@
 		/obj/item/stock_parts/console_screen,
 	)
 
+/obj/structure/machinery/autolathe/armylathe/Initialize(mapload, ...)
+	. = ..()
+	// Check for globally unlocked ordnance technologies
+	if(GLOB.ordnance_research && length(GLOB.ordnance_research.tech_bought))
+		add_recipe(GLOB.ordnance_research.tech_bought)
+
 /obj/structure/machinery/autolathe/armylathe/full
 	stored_material =  list("metal" = 56250, "plastic" = 20000) //15 metal and 10 plastic sheets
 
@@ -679,6 +685,12 @@
 		to_chat(user, SPAN_WARNING("You have no idea how to operate the [name]."))
 		return FALSE
 	. = ..()
+
+/obj/structure/machinery/autolathe/armylathe/proc/update_ordnance_tech(list/new_techs)
+	if(!length(new_techs))
+		return
+	add_recipe(new_techs)
+
 
 /obj/structure/machinery/autolathe/medilathe
 	name = "\improper Medilathe"
